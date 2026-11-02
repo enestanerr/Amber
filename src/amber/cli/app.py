@@ -14,7 +14,7 @@ from typing import Annotated
 
 import typer
 
-from amber.cli import init_cmd
+from amber.cli import init_cmd, traces_cmd
 from amber.cli._output import State, render_error
 from amber.errors import AmberError
 from amber.util.logging import setup_logging
@@ -68,6 +68,7 @@ def root(
 
 
 app.command("init")(init_cmd.init)
+app.add_typer(traces_cmd.traces_app, name="traces")
 
 
 def main() -> None:
