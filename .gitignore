@@ -1,0 +1,43 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+.python-version.local
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --- Amber runtime state (never commit) ---
+.amber/
+examples/*/.amber/
+examples/*/.outbox/
+*.env
+.env.*
+
+# --- Obsidian: keep app config, ignore per-machine workspace state ---
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/workspace/
+.obsidian/cache/
+.obsidian/plugins/*/data.json
+.obsidian/hotkeys.json
+
+# --- Editors / OS ---
+.claude/settings.local.json
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Node (price-watch uses npx only) ---
+node_modules/
