@@ -257,15 +257,22 @@ def output_fields(
     elif result is not None:
         fields.append(("result", "Any", var))
     taken = {f[0] for f in fields}
+    conditional = {s.idx for s in skeleton.steps if s.conditional}
     for hole in holes:
         if hole.kind != "judgment":
             continue
+        var_s = f"s{hole.step_idx}"
         for name, ftype in hole.expected_types.items():
             if ftype != "str":
                 continue
             out_name = name if name not in taken else f"{name}_{hole.step_idx}"
             taken.add(out_name)
-            fields.append((out_name, "str", f"s{hole.step_idx}.{name}"))
+            if hole.step_idx in conditional:
+                # the judgment runs only inside the step's `if`: a quiet day has no alert text
+                expr = f"None if {var_s} is None else {var_s}.{name}"
+                fields.append((out_name, "str | None", expr))
+            else:
+                fields.append((out_name, "str", f"{var_s}.{name}"))
     if not fields:
         fields.append(("ok", "bool", "True"))
     return fields
@@ -426,6 +433,8 @@ def body_lines(
         inner.append(f"{call}  # step {step.idx + 1}{effect}")
         if cond is not None:
             lines.append(f"r{step.idx} = None")
+            if judgment is not None:
+                lines.append(f"s{step.idx} = None")
             lines.append(f"if {cond}:")
             lines.extend("    " + line for line in inner)
         else:

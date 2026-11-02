@@ -187,6 +187,26 @@ def test_conditional_data_predicate_and_gate() -> None:
         lint_program(src)
 
 
+def test_conditional_judgment_output_is_optional() -> None:
+    """A quiet day posts no alert: the alert text must not be read when the gate said no
+    (live price-watch replay: "cannot access local variable 's4'")."""
+    data: list[Trace] = []
+    alerts = [None, "Brass lantern moved from $48.00 to $46.00", "Iron torch moved to $29.50"]
+    for i, alert in enumerate(alerts):
+        calls: list[Any] = [("web.snapshot", {}, f"catalog page {i} " * 30)]
+        if alert:
+            calls.append(("alerts.post", {"text": alert}, {"ok": True, "ts": f"{i}.5"}))
+        data.append(mk_trace(f"t{i}", calls))
+    sk = build_skeleton(data)
+    gen = generate(sk, data, collect_holes(sk, data), Fills(), version=1)
+    body = gen.source.split("def run(", 1)[1]
+    assert body.index("s1 = None") < body.index("if g1.go:")
+    assert "text=None if s1 is None else s1.text" in body
+    assert "text: str | None" in gen.source
+    ast.parse(gen.source)
+    lint_program(gen.source)
+
+
 def test_helpers() -> None:
     assert path_expr("r0", "$.a[0].b") == 'r0["a"][0]["b"]'
     assert render_prompt("P", "") == 'P = ""'
