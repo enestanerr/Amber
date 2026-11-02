@@ -1,5 +1,5 @@
 # Publishes to PyPI with Trusted Publishing (OIDC) when a `v*` tag is pushed.
-# Configure the PyPI publisher for this repository before the first release.
+# Publishing is opt-in (see the publish job); without it a tag only builds and smoke-tests.
 name: release
 
 on:
@@ -24,6 +24,9 @@ jobs:
           path: dist/
 
   publish:
+    # opt-in: set the repository variable PYPI_PUBLISH=true after configuring the PyPI trusted
+    # publisher (project amber-compiler, workflow release.yml, environment pypi)
+    if: vars.PYPI_PUBLISH == 'true'
     needs: build
     runs-on: ubuntu-latest
     environment: pypi

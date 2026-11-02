@@ -1,6 +1,6 @@
 [project]
 name = "amber-compiler"
-version = "0.1.0a0"
+version = "0.1.0"
 description = "Compile recorded agent runs into neuro-symbolic programs with replay tests, guards and a drift loop."
 readme = "README.md"
 license = "Apache-2.0"

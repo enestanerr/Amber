@@ -618,3 +618,120 @@ Full suite: 296 passed, 1 skipped. ruff + pyright clean.
 **Deferred (need the maintainer)**: live `make demo`, live bench for all three examples
 (`--all --runs 3`), `docs/assets/demo.gif`, CHANGELOG v0.1.0 + version bump + tag + TestPyPI/PyPI
 via `release.yml`, post-release `uvx --from amber-compiler amber --version` on a clean machine.
+
+## 2026-11-02 — Live run on a claude.ai subscription, fixes, measured bench, 0.1.0
+
+**Setup.** Windows 11, claude CLI 2.1.316 logged in with claude.ai (no `ANTHROPIC_API_KEY`).
+Agent recordings on `claude-sonnet-5-5`, passed explicitly with `--model` because the user asked
+not to spend tests on the default (Fable) model; hole synthesis on `claude-sonnet-5-5`, run-time
+judgments on `claude-haiku-5-5`, both through the `cli` backend. Each example went through
+`make record` (3 runs) → `amber align --show` → `amber compile` → `amber verify` → `amber run`
+on an input nobody recorded.
+
+**Problems the live runs exposed** (one commit each; every code fix has a regression test):
+
+1. CLI backend: `--max-turns 1` always ended in `error_max_turns` (structured output takes a
+   second turn); the call carried ~24k tokens of Claude Code context; prompts on argv hit the
+   Windows command-line limit. Now `--max-turns 2`, no built-in tools, no dynamic system-prompt
+   sections, no session file, system prompt via file, prompt via stdin (~1.2k overhead).
+2. The fallback would relaunch `claude` without `--model` (the user's default). Recordings now
+   store the pass-through flags; the manifest and the fallback reuse them.
+3. Claude Code's `ToolSearch` was recorded as a builtin step → skipped as harness bookkeeping.
+4. Account-level MCP connectors (claude.ai Docs, 170 Higgsfield tools) entered the agent's
+   context and the trace → `amber record --mcp` adds `--strict-mcp-config`. The three
+   weekly-report recordings made before this were discarded (they would inflate the baseline).
+5. `tests/unit/cli/test_run.py` failed when run alone (`UnsupportedOperation: fileno`): mcp binds
+   `sys.stderr` at import time → explicit errlog for every stdio server. All test files now pass
+   in isolation too.
+6. The previous ISO week (`2026-W41`) became a required inferred input → ISO week, ordinal and
+   year-month dates are transforms when another date can derive them.
+7. `top_products n=5` resolved to `Ref(3,$.result[22].f)`, a coincidence in all three runs → a
+   constant prefers `Const` over a list-position `Ref`.
+8. Judgment context cut every list to 20 items (20 of 75 orders) → whole values within 40 KB.
+9. Generated programs passed the `Inputs` model to transforms verified with a dict → replay
+   failed with `'Inputs' object is not subscriptable`.
+10. Claude Code shows MCP structured content `{"result": [...]}` to the agent as text while the
+    live backend unwrapped it → the first live run stopped on `result_shape: $: type array,
+    recorded object`. One `unwrap_envelope` for every path; stored traces were migrated with the
+    same function.
+11. Store `sync()` deleted traces it had just re-indexed under another spelling of their path.
+12. The first transform attempt was rejected only for `from typing import Any` → future imports
+    and plain typing names accepted (`import typing` stays blocked: `get_type_hints` evaluates
+    strings).
+13. Haiku through the CLI thought 9.9k tokens for one judgment and tripped the 20k budget →
+    `--effort low` for short answers (6.4k, counts verified against a recount); example budgets
+    40k; `amber.toml` budgets apply at run time without a recompile.
+14. The doctor mixed program versions (a healed v2 stayed degraded) and printed a soft detail next
+    to a hard verdict → version-scoped statistics.
+15. A judgment told Slack "r5 contains no rows" → the system prompt forbids context keys.
+16. issue-triage: per-issue `add_labels` (17, 13 and 10 calls) cannot compile without loops
+    (v0.2) → batch writes in the mock server, variable-length list arguments mined as one leaf,
+    nested judgment models turned into plain JSON for tool calls. The generator made some
+    duplicates older than their originals → fixed.
+17. Conditional-step predicates accepted one-trace "equalities" and whole page snapshots → they
+    need two supporting traces and a flag-like value; otherwise the step gets a gate.
+18. price-watch: scenario A never alerts, so the program could never post → scenario A2 (a
+    price-update day) and per-run scenario tags. The agent read Playwright's timestamped snapshot
+    files with `Read` and alternated navigate and fetch → the task names the browser tools and the
+    recordings disallow `Read,Glob,Grep` (six recordings discarded).
+19. Gate fills could never verify, because a recording has no `reason` → placeholders for fields
+    a recording cannot contain.
+20. A conditional step's judgment output raised `cannot access local variable 's4'` on a quiet
+    day → declared before the `if`, optional in `Output`.
+21. Prompts that named an input (`product`) were rejected as unknown context keys.
+22. The CLI backend dropped a rejected first attempt's usage, and the CLI's cost was not recorded.
+
+**Finding: price-watch's planned drift is absorbed.** @playwright/mcp's snapshot is an
+accessibility tree without CSS classes and `browser_evaluate` returns markdown text, so the
+`.price` → `.cost` rename changes nothing the program reads. Under scenario B it posted the
+correct alert without a guard stop. The self-healing loop was run on weekly-report instead
+(spec note in `docs/06-examples.md`).
+
+**Live outputs (2026-11-02, trimmed)**
+
+```
+weekly-report  verify v1 3/3 PASS
+               run week=2026-W40 (unrecorded): steps 7 · llm calls 1 · tokens in 21,170 · out 8,072 · 31.5 s · agent turns 0
+               (segment counts 19→29, 43→37, 50→43, 6→10 and the top-5 revenue match a recount)
+               make drift; run week=2026-W41 → stopped: result_shape — $[0]: missing key 'total' (exit 4)
+               doctor → degraded, recommendation fallback (exit 5)
+               run --fallback agent → fallback_resume from step 3; trace t_20261102_204011_cc43a1 (8 calls, 8 agent turns)
+               compile --refresh → v2; verify v2 4/4 PASS; run week=2026-W39 ok (0 agent turns); doctor v2 healthy
+issue-triage   verify v1 3/3 PASS (labels and duplicate comments compiled to deterministic transforms)
+               run since=2026-10-28 (unrecorded): steps 4 · llm calls 1 · tokens in 10,398 · out 2,147 · 12.4 s · agent turns 0
+price-watch    verify v2 3/3 PASS (v1 failed replay on the quiet day: fix 20)
+               A2 product=torch-iron (unrecorded): alert "Iron Garden Torch (torch-iron) $27.00 -> $29.50" · 2 llm calls · 15k tokens
+               A product=lantern-tin: the gate said no, nothing posted · 1 llm call · 7k tokens
+               B product=all: correct alert for 3 price changes + newly out of stock, no guard stop
+```
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run python bench/run_bench.py --all --runs 3 --baseline existing && test -s bench/results.md
+issue-triage: agent median 153,944 tok, compiled median 11,892 tok, statuses ['ok']
+price-watch: agent median 165,225 tok, compiled median 14,862 tok, statuses ['ok']
+weekly-report: agent median 174,076 tok, compiled median 29,472 tok, statuses ['ok']
+wrote bench/results.md
+```
+
+The plan's `--all --runs 3` form re-records nine agent runs; the baseline above is the nine
+recordings made earlier the same day with identical flags (`--baseline existing`).
+
+```
+$ uv build && uv run twine check dist/*
+Checking dist/amber_compiler-0.1.0-py3-none-any.whl: PASSED
+Checking dist/amber_compiler-0.1.0.tar.gz: PASSED
+$ uvx --from ./dist/amber_compiler-0.1.0-py3-none-any.whl amber --version
+amber 0.1.0
+$ uv run pytest -q --cov=amber.trace --cov=amber.align --cov=amber.compile --cov=amber.runtime.backends.cassette
+338 passed, 1 skipped · TOTAL 92%
+```
+
+Full suite: 338 passed, 1 skipped. ruff + pyright clean.
+
+**Not done (needs the maintainer):** the demo GIF (`vhs` and `ffmpeg` are not installed here);
+PyPI publishing (configure the trusted publisher for `amber-compiler`, then set the repository
+variable `PYPI_PUBLISH=true`; the repository is private, so publishing would make the source
+public) and the post-release `uvx --from amber-compiler` check. A leftover `amber ui --port 8787`
+process from the P9 smoke test still holds `.venv/Scripts/amber.exe`; close it before `uv sync`.
