@@ -5,7 +5,9 @@ AMBER := uv run amber
 # this repository's CLAUDE.md out of the agent's context
 AGENT_MODEL ?= claude-sonnet-5-5
 # scenario:product pairs: a quiet day and two price-update days (A2), so the recordings show
-# both outcomes; `make run` uses an unseen product on the update day
+# both outcomes; `make run` uses an unseen product on the update day. Read/Glob/Grep are
+# disallowed: @playwright/mcp saves navigation snapshots to timestamped files and the agent
+# otherwise reads them from disk instead of using browser_snapshot ("browser tools only").
 RUNS := A:all A2:all A2:lantern-brass
 
 .PHONY: site serve record align compile verify run drift undrift heal demo clean
@@ -20,7 +22,8 @@ record:           ## 3 live recordings (needs the claude CLI logged in and `make
 	@for r in $(RUNS); do \
 	  s=$${r%%:*}; p=$${r#*:}; uv run python scenario.py $$s; \
 	  $(AMBER) record $(WF) --input product=$$p --tag scenario-$$s --mcp mcp.json --allow 'mcp__playwright__*' --allow 'mcp__alerts__*' \
-	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{product}/$$p/g" task.md)" --model $(AGENT_MODEL) --setting-sources user; \
+	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{product}/$$p/g" task.md)" --model $(AGENT_MODEL) --setting-sources user \
+	    --disallowedTools Read,Glob,Grep; \
 	done
 	uv run python scenario.py A
 
