@@ -24,6 +24,8 @@ examples/*/.outbox/
 # compiled programs are build output of `make demo` / `make demo-offline` (their source
 # recordings live in the gitignored .amber/)
 examples/*/programs/
+# @playwright/mcp writes page snapshots and console logs into the working directory
+.playwright-mcp/
 examples/*/.scenario
 *.env
 .env.*

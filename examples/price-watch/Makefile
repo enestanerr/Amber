@@ -4,7 +4,9 @@ AMBER := uv run amber
 # explicit model for the recordings (never the user's default); --setting-sources user keeps
 # this repository's CLAUDE.md out of the agent's context
 AGENT_MODEL ?= claude-sonnet-5-5
-PRODUCTS := all lantern-brass all
+# scenario:product pairs: a quiet day and two price-update days (A2), so the recordings show
+# both outcomes; `make run` uses an unseen product on the update day
+RUNS := A:all A2:all A2:lantern-brass
 
 .PHONY: site serve record align compile verify run drift undrift heal demo clean
 
@@ -14,11 +16,13 @@ site:             ## (re)generate site/ for the current scenario
 serve:            ## serve the static catalog on :8765 (keep running in another terminal)
 	uv run python -m http.server 8765 --directory site
 
-record: site      ## 3 live recordings (needs the claude CLI logged in and `make serve` running)
-	@for p in $(PRODUCTS); do \
-	  $(AMBER) record $(WF) --input product=$$p --mcp mcp.json --allow 'mcp__playwright__*' --allow 'mcp__alerts__*' \
+record:           ## 3 live recordings (needs the claude CLI logged in and `make serve` running)
+	@for r in $(RUNS); do \
+	  s=$${r%%:*}; p=$${r#*:}; uv run python scenario.py $$s; \
+	  $(AMBER) record $(WF) --input product=$$p --tag scenario-$$s --mcp mcp.json --allow 'mcp__playwright__*' --allow 'mcp__alerts__*' \
 	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{product}/$$p/g" task.md)" --model $(AGENT_MODEL) --setting-sources user; \
 	done
+	uv run python scenario.py A
 
 align:
 	$(AMBER) align $(WF) --show
@@ -29,8 +33,9 @@ compile:
 verify:
 	$(AMBER) verify $(WF)
 
-run:
-	$(AMBER) run $(WF) --input product=all --allow-writes
+run:              ## unseen input on a price-update day: only the iron torch changed
+	uv run python scenario.py A2
+	$(AMBER) run $(WF) --input product=torch-iron --allow-writes
 
 drift:            ## scenario B: prices change and the `.price` class becomes `.cost`
 	uv run python scenario.py B
@@ -46,4 +51,4 @@ heal:
 demo: record align compile verify run
 
 clean:
-	rm -rf .amber .outbox programs .scenario
+	rm -rf .amber .outbox programs .scenario .playwright-mcp

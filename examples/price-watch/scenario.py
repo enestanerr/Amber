@@ -1,8 +1,12 @@
 """Generate the static catalog site for price-watch and switch scenarios.
 
     uv run python scenario.py        # write site/ for the current scenario (A by default)
+    uv run python scenario.py A2     # a price-update day: two prices change, markup unchanged
     uv run python scenario.py B      # make drift: prices change AND `.price` becomes `.cost`
     uv run python scenario.py A
+
+``A`` (nothing changed) and ``A2`` (prices moved) are the days the agent is recorded on, so the
+recordings contain both outcomes: no alert and an alert.
 
 The site is six fictional lanterns with ``<span class="price">`` / ``<span class="stock">``
 spans plus ``previous.json`` (the prices the agent compares against).
@@ -29,11 +33,15 @@ PRODUCTS: list[dict[str, Any]] = [
     {"sku": "lantern-tin", "name": "Tin Pocket Lantern", "price": 14.0, "stock": 35},
     {"sku": "stand-oak", "name": "Oak Lantern Stand", "price": 39.0, "stock": 7},
 ]
-DRIFT_PRICES = {"lantern-brass": 52.0, "lamp-storm": 49.0, "stand-oak": 41.5}
+UPDATE_PRICES = {"lantern-brass": 46.0, "torch-iron": 29.5}  # scenario A2
+DRIFT_PRICES = {"lantern-brass": 52.0, "lamp-storm": 49.0, "stand-oak": 41.5}  # scenario B
 
 
 def catalog(scenario_name: str) -> list[dict[str, Any]]:
     items = [dict(p) for p in PRODUCTS]
+    if scenario_name == "A2":
+        for item in items:
+            item["price"] = UPDATE_PRICES.get(item["sku"], item["price"])
     if scenario_name == "B":
         for item in items:
             item["price"] = DRIFT_PRICES.get(item["sku"], item["price"])

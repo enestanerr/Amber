@@ -118,3 +118,18 @@ def test_price_watch_site_scenarios(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert 'class="cost"' in b and 'class="price"' not in b and "$52.00" in b
     changed = [p["sku"] for p in scenario.catalog("B") if p["price"] != previous[p["sku"]]["price"]]
     assert changed == ["lantern-brass", "lamp-storm", "stand-oak"]
+
+
+def test_price_watch_update_day_changes_prices_but_not_markup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A2 is a recording day with an alert to learn from; only B renames the price class."""
+    scenario = _load(WATCH / "scenario.py", "watch_scenario_a2", WATCH)
+    monkeypatch.setattr(scenario, "SITE", tmp_path / "site")
+    html = scenario.write_site("A2").read_text(encoding="utf-8")
+    assert 'class="price"' in html and "$46.00" in html and "$29.50" in html
+    previous = json.loads((tmp_path / "site" / "previous.json").read_text(encoding="utf-8"))
+    changed = [
+        p["sku"] for p in scenario.catalog("A2") if p["price"] != previous[p["sku"]]["price"]
+    ]
+    assert changed == ["lantern-brass", "torch-iron"]
