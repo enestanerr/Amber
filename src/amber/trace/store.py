@@ -96,9 +96,10 @@ class TraceSummary(BaseModel):
 
 class TraceStore:
     def __init__(self, home: Path) -> None:
-        self.home = home
-        self.traces_dir = home / "traces"
-        self.db = Db(home / "amber.db")
+        # absolute, so the index never stores paths that depend on the caller's cwd
+        self.home = home.absolute()
+        self.traces_dir = self.home / "traces"
+        self.db = Db(self.home / "amber.db")
         self.db.ensure_schema(TRACES_DDL)
 
     # -- paths -------------------------------------------------------------
@@ -167,6 +168,7 @@ class TraceStore:
                 known[row["id"]] = row["path"]
         changes = 0
         on_disk: set[str] = set()
+        reindexed: set[str] = set()
         if self.traces_dir.is_dir():
             for file in sorted(self.traces_dir.glob("*/*.json")):
                 on_disk.add(str(file))
@@ -174,8 +176,12 @@ class TraceStore:
                     continue
                 trace = Trace.model_validate(read_json(file))
                 self._index(TraceSummary.from_trace(trace, file))
+                reindexed.add(trace.id)
                 changes += 1
-        stale = [tid for tid, path in known.items() if path not in on_disk]
+        # a row whose file was just re-indexed under another spelling of its path is not stale
+        stale = [
+            tid for tid, path in known.items() if path not in on_disk and tid not in reindexed
+        ]
         if stale:
             self.db.write(
                 lambda c: c.executemany("DELETE FROM traces WHERE id = ?", [(t,) for t in stale])

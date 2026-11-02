@@ -122,3 +122,19 @@ def test_db_rollback_on_error(tmp_path: Path) -> None:
         db.write(failing)
     with db.read() as conn:
         assert conn.execute("SELECT COUNT(*) FROM t").fetchone()[0] == 0
+
+
+def test_relative_home_then_absolute_home_keeps_every_trace(
+    tmp_path: Path, weekly_traces: list[Trace], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A store opened with a relative home used to index cwd-relative paths; the next sync
+    under the absolute home re-indexed the files and then deleted them as stale in one pass."""
+    monkeypatch.chdir(tmp_path)
+    rel = TraceStore(Path("proj") / ".amber")
+    for t in weekly_traces:
+        rel.save(t)
+    assert all(Path(s.path).is_absolute() for s in rel.list())
+    # simulate an index written by the old behaviour: cwd-relative paths
+    rel.db.write(lambda c: c.execute("UPDATE traces SET path = 'proj/' || id || '.json'"))
+    absolute = TraceStore(tmp_path / "proj" / ".amber")
+    assert [s.id for s in absolute.list()] == [t.id for t in weekly_traces]
