@@ -63,7 +63,8 @@ step can process it).
 model=cfg.models.judgment, max_tokens=1200)`. `JUDGMENT_SYSTEM` = "You are one step of a
 compiled workflow. Answer only with the requested fields. If the context is insufficient,
 set confidence below 0.5 and explain in `notes` if present." Context rendered as compact JSON
-(shrunk as in `04-compiler.md` §D1). Usage recorded in `llm_calls`.
+(whole values up to a 40 KB total, then the largest value shrunk first; see the note in
+`04-compiler.md` §D1). Usage recorded in `llm_calls`.
 
 ## 3. Guards (`amber.runtime.guards`)
 
