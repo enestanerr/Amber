@@ -24,13 +24,15 @@ examples/*/.outbox/
 *.env
 .env.*
 
-# --- Obsidian: keep app config, ignore per-machine workspace state ---
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/workspace/
-.obsidian/cache/
-.obsidian/plugins/*/data.json
-.obsidian/hotkeys.json
+# --- Obsidian: keep the root app config, ignore per-machine state anywhere ---
+**/.obsidian/workspace.json
+**/.obsidian/workspace-mobile.json
+**/.obsidian/workspace/
+**/.obsidian/cache/
+**/.obsidian/plugins/*/data.json
+**/.obsidian/hotkeys.json
+# docs/ may be opened as its own vault; that config is personal
+docs/.obsidian/
 
 # --- Editors / OS ---
 .claude/settings.local.json
