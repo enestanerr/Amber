@@ -61,6 +61,12 @@ leave `Unknown` (the transform hole will express the selection). Ignore keys who
 ≥ 20 KB (store as `Unknown` with `large=True`, which forces a judgment/transform via hole
 with truncated context).
 
+> **Note (2026-11-02, live recordings):** when a value is identical in every trace (so `Const`
+> holds) and the best `Ref`/`Template` reaches it through a list index, `Const` wins. A list
+> position explains a constant no better than the literal and breaks when the list reorders: in
+> the first live weekly-report recordings `top_products n=5` matched an unrelated
+> `rfm_snapshot $.result[22].f == 5` in all three runs. Varying values keep the order above.
+
 Provenance also produces **edges**: `col_j → col_k` if any arg of `k` references `j`.
 
 ### A4. Classification
@@ -77,6 +83,14 @@ Per column (step):
 A step can be both `conditional` and one of the first three. Mixed `Unknown` leaves (one
 string ≥ 24 chars, one numeric) → `judgment` wins for the string leaf; numeric leaf gets its
 own transform hole.
+
+> **Note (2026-11-02):** "date/ISO string" covers the ISO 8601 calendar date (with optional
+> time), week date (`2026-W41`, `2026-W41-3`), ordinal date (`2026-285`) and year-month
+> (`2026-10`). A date-like leaf is a transform trigger only when every trace offers a date to
+> compute it from (a declared input or an earlier result leaf); otherwise it falls through to
+> §A6 and becomes an inferred input. Live recordings asked `week_range` for the previous week
+> (`2026-W41` for input `2026-W42`), which must be a transform, while an undeclared first
+> `week` argument must stay an inferred input.
 
 ### A5. Pruning (dead-step elimination)
 
@@ -216,6 +230,13 @@ Context available to a judgment hole: results of `context_hint` columns (≤ 8 K
 `shrink()` — lists truncated to 20 items with a `"...+N"` marker, long strings to 500 chars),
 the inputs, and `thoughts_before` (as examples of the agent's reasoning, never pasted into the
 runtime prompt).
+
+> **Note (2026-11-02, live recordings):** the 8 KB per-value `shrink()` applies to what the
+> *synthesizer* sees (shapes and a few rows are enough to write a prompt or a transform). At
+> **run time** the judgment gets whole values as long as the rendered context fits in 40 KB of
+> compact JSON; beyond that the largest value is shrunk first (`runtime/judgment.py`
+> `fit_context`). The live weekly-report summary aggregates over all 75 orders and both 120-row
+> RFM snapshots (about 24 KB together); a 20-item cut made the judgment report wrong numbers.
 
 ### D2. Synthesizer prompts (structured outputs)
 

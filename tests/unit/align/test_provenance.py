@@ -123,3 +123,22 @@ def test_single_trace_everything_is_const_or_ref() -> None:
     assert _prov(s.steps, 0, "$.k").kind == "const"
     assert _prov(s.steps, 1, "$.x").kind == "ref"
     assert all(st.kind == "deterministic" for st in s.steps)
+
+
+def test_constant_value_prefers_const_over_a_list_position_ref() -> None:
+    """``n=5`` in every run must not become ``Ref(0,$.rows[1].f)`` because row 1 has ``f=5``."""
+    traces = [
+        mk_trace(
+            f"t{i}",
+            [
+                ("shop.rfm", {}, {"rows": [{"id": f"c{i}", "f": 2}, {"id": "c9", "f": 5}]}),
+                ("shop.top", {"n": 5, "first": f"c{i}"}, []),
+            ],
+        )
+        for i in range(3)
+    ]
+    s = build_skeleton(traces)
+    assert _prov(s.steps, 1, "$.n").describe() == "Const(5)"
+    # a value that varies with the run is still explained by the list position
+    first = _prov(s.steps, 1, "$.first")
+    assert first.kind == "ref" and first.path == "$.rows[0].id"

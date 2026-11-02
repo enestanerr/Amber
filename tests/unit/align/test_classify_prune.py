@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from amber.align.skeleton import build_skeleton
 from tests.unit.align.conftest import mk_trace
 
@@ -74,6 +76,45 @@ def test_date_and_numeric_unknowns_are_transforms() -> None:
     step = build_skeleton(traces).steps[1]
     assert step.kind == "transform-needed"
     assert step.args["$.as_of"].hole == "transform" and step.args["$.n"].hole == "transform"
+
+
+def test_iso_week_and_month_unknowns_are_transforms_not_inferred_inputs() -> None:
+    """The previous ISO week (W42 -> W41) is derived from the input, not a new input."""
+    traces = [
+        mk_trace(
+            f"t{i}",
+            [("shop.week_range", {"week": prev, "month": month}, {"start": "x"})],
+            inputs={"week": week},
+        )
+        for i, (week, prev, month) in enumerate(
+            [("2026-W42", "2026-W41", "2026-09"), ("2026-W43", "2026-W42", "2026-10")]
+        )
+    ]
+    s = build_skeleton(traces)
+    assert s.steps[0].kind == "transform-needed"
+    assert s.steps[0].args["$.week"].hole == "transform"
+    assert s.steps[0].args["$.month"].hole == "transform"
+    assert [n for n, spec in s.inputs.items() if spec.source == "inferred"] == []
+
+
+@pytest.mark.parametrize(
+    ("value", "date_like"),
+    [
+        ("2026-10-12", True),
+        ("2026-10-12T07:23:00Z", True),
+        ("2026-W41", True),
+        ("2026-W41-3", True),
+        ("2026-285", True),
+        ("2026-10", True),
+        ("2026-W8", False),
+        ("LNT-011", False),
+        ("eng", False),
+    ],
+)
+def test_is_date_like(value: str, date_like: bool) -> None:
+    from amber.align.classify import is_date_like
+
+    assert is_date_like(value) is date_like
 
 
 def test_mixed_leaves_judgment_wins_for_step_kind() -> None:

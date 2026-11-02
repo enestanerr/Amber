@@ -199,13 +199,27 @@ def _resolve_const(values: dict[str, Any]) -> Provenance | None:
     return None
 
 
+def through_list_position(prov: Provenance) -> bool:
+    """A ``Ref`` (or a template part) that reaches its value through a list index."""
+    if prov.kind == "ref":
+        return "[" in (prov.path or "")
+    if prov.kind == "template":
+        return any(p.ref is not None and through_list_position(p.ref) for p in prov.parts or [])
+    return False
+
+
 def resolve(values: dict[str, Any], index: Index, step_idx: int) -> Provenance:
     """Provenance of one arg leaf given its value in every trace where the step exists."""
+    const = _resolve_const(values)
     for finder in (_resolve_input, _resolve_ref, _resolve_template):
         prov = finder(values, index, step_idx)
         if prov is not None:
+            # identical in every trace: a list position explains the value no better than the
+            # literal and breaks when the list reorders (live run: ``top_products n=5`` matched
+            # an unrelated ``rfm_snapshot $.result[22].f == 5`` in all three recordings)
+            if const is not None and through_list_position(prov):
+                return const
             return prov
-    const = _resolve_const(values)
     if const is not None:
         return const
     large = any(len(canonical_json(v)) >= LARGE_BYTES for v in values.values())

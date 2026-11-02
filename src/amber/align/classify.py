@@ -4,8 +4,10 @@ Each ``Unknown`` leaf is assigned a hole kind:
 
 * ``judgment`` — a string ≥ 24 chars, an enum-like short string (≤ 3 distinct values that
   repeat across traces), or any string when the preceding thoughts contain decision cues;
-* ``transform`` — numbers, booleans, date/ISO strings, lists, dicts;
-* short free strings that merely vary across traces are promoted to **inferred inputs**.
+* ``transform`` — numbers, booleans, lists, dicts, and date/ISO strings when another date is
+  available to compute them from (a declared input or an earlier result);
+* short free strings that merely vary across traces (dates with nothing to derive them from
+  included) are promoted to **inferred inputs**.
 
 Optional steps become ``conditional`` with a data predicate derived from an earlier core
 result when one separates the present/absent traces, else an ``unknown`` (gate) predicate.
@@ -19,17 +21,43 @@ from typing import Any
 from amber.align.models import InputSpec, Predicate, Provenance, StepSpec
 from amber.align.provenance import call_at, leaf_key
 from amber.trace.jsonpath import MISSING, get_path, iter_leaves
-from amber.trace.models import Trace
+from amber.trace.models import ToolCall, Trace
 
 JUDGMENT_MIN_CHARS = 24
 ENUM_MAX_DISTINCT = 3
 INFERRED_MAX_CHARS = 64
 DECISION_CUES = re.compile(r"decide|choose|classify|summar|judg|seems|looks like|I think", re.I)
-DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$")
+# ISO 8601: calendar date (optionally with a time), week date (2026-W42, 2026-W42-1), ordinal
+# date (2026-285) and year-month (2026-10). A previous-week argument must become a transform,
+# not an inferred input the user would have to pass.
+DATE_RE = re.compile(
+    r"^\d{4}-(?:"
+    r"\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?"
+    r"|W\d{2}(?:-[1-7])?"
+    r"|\d{3}"
+    r"|\d{2}"
+    r")$"
+)
 
 
 def is_date_like(value: str) -> bool:
     return bool(DATE_RE.match(value.strip()))
+
+
+def _has_date(value: Any) -> bool:
+    return any(isinstance(v, str) and is_date_like(v) for _, v in iter_leaves(value))
+
+
+def _date_source_available(step: StepSpec, traces: dict[str, Trace]) -> bool:
+    """Every trace offers a date to compute from: a declared input or an earlier result leaf."""
+    for tid, event_idx in step.calls.items():
+        trace = traces[tid]
+        if _has_date(dict(trace.inputs)):
+            continue
+        earlier = trace.events[:event_idx]
+        if not any(isinstance(ev, ToolCall) and _has_date(ev.result) for ev in earlier):
+            return False
+    return True
 
 
 def _enum_like(values: list[Any]) -> bool:
@@ -71,7 +99,7 @@ def classify_step(
         values = _leaf_values(step, traces, path)
         sample = values[0] if values else None
         if isinstance(sample, str):
-            if is_date_like(sample):
+            if is_date_like(sample) and _date_source_available(step, traces):
                 prov.hole = "transform"
                 transform = True
             elif (
