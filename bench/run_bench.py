@@ -37,7 +37,7 @@ EXAMPLES: dict[str, dict[str, Any]] = {
         "key": "week",
     },
     "issue-triage": {
-        "inputs": ["since=2026-10-27", "since=2026-10-28", "since=2026-10-29"],
+        "inputs": ["since=2026-10-27", "since=2026-10-29", "since=2026-10-30"],
         "key": "since",
     },
     "price-watch": {

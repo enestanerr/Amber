@@ -1,17 +1,15 @@
 [
   {
-    "name": "add_comment",
+    "name": "add_comments",
     "required": [
-      "number",
-      "body"
+      "comments"
     ],
     "read_only": false
   },
   {
     "name": "add_labels",
     "required": [
-      "number",
-      "labels"
+      "updates"
     ],
     "read_only": false
   },

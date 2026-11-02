@@ -41,6 +41,8 @@ def test_issue_data_is_deterministic() -> None:
     assert data == scenario.issues()
     for original, dup in scenario.DUPLICATES:
         assert data[dup - 1]["title"].startswith(data[original - 1]["title"])
+        # "duplicates an older one" must hold in the data the agent sees
+        assert data[original - 1]["created_at"] < data[dup - 1]["created_at"]
     assert len({i["created_at"] for i in data}) >= 5
 
 
@@ -73,22 +75,34 @@ async def test_github_tools_golden_and_scenario_b(
         assert new and all(i["created_at"] >= "2026-10-28" for i in new)
         hit = _rows(await client.call_tool("search_issues", {"query": "dark mode"}))
         assert hit and "Dark mode" in hit[0]["title"]
-        ok = _rows(await client.call_tool("add_labels", {"number": 1, "labels": ["area:ui"]}))
-        assert ok["ok"] is True and "area:ui" in ok["labels"]
+        batch = [{"number": 1, "labels": ["area:ui"]}, {"number": 2, "labels": ["area:api"]}]
+        ok = _rows(await client.call_tool("add_labels", {"updates": batch}))
+        assert ok == {"ok": True, "updated": [1, 2]}
         comment = _rows(
-            await client.call_tool("add_comment", {"number": 1, "body": "Duplicate of #3"})
+            await client.call_tool(
+                "add_comments", {"comments": [{"number": 1, "body": "Duplicate of #3"}]}
+            )
         )
-        assert comment["ok"] and comment["id"] >= 1001
+        assert comment["ok"] and comment["ids"][0] >= 1001
         issue = _rows(await client.call_tool("get_issue", {"number": 1}))
-        assert issue["comments"][0]["body"] == "Duplicate of #3"
-        bad = await client.call_tool("add_labels", {"number": 1, "labels": ["area:nope"]})
+        assert issue["comments"][0]["body"] == "Duplicate of #3" and "area:ui" in issue["labels"]
+        # all or nothing: one unknown label rejects the whole batch
+        mixed = [{"number": 3, "labels": ["area:docs"]}, {"number": 4, "labels": ["area:nope"]}]
+        bad = await client.call_tool("add_labels", {"updates": mixed})
         assert bad.is_error
+        assert _rows(await client.call_tool("get_issue", {"number": 3}))["labels"] == []
     monkeypatch.setenv("AMBER_SCENARIO", "B")
     gh_b = _load(TRIAGE / "server_github.py", "github_b", TRIAGE)
     async with Client(gh_b.mcp) as client:
-        rejected = await client.call_tool("add_labels", {"number": 2, "labels": ["area:ui"]})
+        rejected = await client.call_tool(
+            "add_labels", {"updates": [{"number": 2, "labels": ["area:ui"]}]}
+        )
         assert rejected.is_error
-        accepted = _rows(await client.call_tool("add_labels", {"number": 2, "labels": ["kind/ui"]}))
+        accepted = _rows(
+            await client.call_tool(
+                "add_labels", {"updates": [{"number": 2, "labels": ["kind/ui"]}]}
+            )
+        )
         assert accepted["ok"] is True
 
 

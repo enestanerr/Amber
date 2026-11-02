@@ -109,6 +109,12 @@ def issues(seed: int = 11) -> list[dict[str, Any]]:
         tgt["title"] = src["title"] + " (again)"
         tgt["body"] = "Same as before: " + src["body"]
         tgt["area"] = src["area"]
+        # a duplicate is always reported after its original ("duplicates an older one")
+        if tgt["created_at"] < src["created_at"]:
+            tgt["created_at"], src["created_at"] = src["created_at"], tgt["created_at"]
+        elif tgt["created_at"] == src["created_at"]:
+            earlier = date.fromisoformat(src["created_at"]) - timedelta(days=1)
+            src["created_at"] = earlier.isoformat()
     return out
 
 

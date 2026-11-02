@@ -4,7 +4,9 @@ AMBER := uv run amber
 # explicit model for the recordings (never the user's default); --setting-sources user keeps
 # this repository's CLAUDE.md out of the agent's context
 AGENT_MODEL ?= claude-sonnet-5-5
-DAYS := 2026-10-27 2026-10-28 2026-10-29
+# three days whose duplicate sets differ (10-30 has 3 duplicates, the others 4); 10-28 is the
+# unseen input used by `make run`
+DAYS := 2026-10-27 2026-10-29 2026-10-30
 
 .PHONY: record align compile verify run drift undrift heal demo clean
 
@@ -24,7 +26,7 @@ verify:
 	$(AMBER) verify $(WF)
 
 run:
-	$(AMBER) run $(WF) --input since=2026-10-30 --allow-writes
+	$(AMBER) run $(WF) --input since=2026-10-28 --allow-writes
 
 drift:            ## scenario B: label taxonomy becomes kind/* and add_labels rejects area:* → error guard
 	uv run python scenario.py B
@@ -33,7 +35,7 @@ undrift:
 	uv run python scenario.py A
 
 heal:
-	$(AMBER) run $(WF) --input since=2026-10-30 --allow-writes --fallback agent
+	$(AMBER) run $(WF) --input since=2026-10-28 --allow-writes --fallback agent
 	$(AMBER) compile $(WF) --refresh
 	$(AMBER) verify $(WF)
 

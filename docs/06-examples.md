@@ -68,8 +68,16 @@ Slack. Use the shop and slack tools only."
 - `list_issues(state: str = "open", since: str | None = None) -> list[{"number","title","body","labels","created_at"}]`
 - `get_issue(number: int) -> {...}`
 - `search_issues(query: str) -> list[{"number","title"}]`
-- `add_labels(number: int, labels: list[str]) -> {"ok": true}` (write)
-- `add_comment(number: int, body: str) -> {"ok": true, "id": int}` (write)
+- `add_labels(updates: list[{"number": int, "labels": list[str]}]) -> {"ok": true, "updated": list[int]}` (write, all or nothing)
+- `add_comments(comments: list[{"number": int, "body": str}]) -> {"ok": true, "ids": list[int]}` (write)
+
+> **Note (2026-11-02):** the writes are batches. Amber v0.1 does not collapse per-item loops
+> (`04-compiler.md` §A2), so per-issue `add_labels(number, labels)` calls (17, 13 and 10 of them
+> in three recordings) cannot compile into a program that serves another day. One batch write
+> per run compiles to one step whose list argument is filled by a single hole, which is the
+> "judgment per issue batch, deterministic writes" shape below. The generator also makes every
+> duplicate newer than its original, and the recorded days are 10-27, 10-29 and 10-30 (their
+> duplicate sets differ; 10-28 is the unseen input).
 
 Scenario B: label taxonomy changes (`area:*` → `kind/*`), `add_labels` rejects unknown labels
 → `ErrorGuard` → fallback shows the agent re-deriving labels.
