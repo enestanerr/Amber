@@ -65,31 +65,31 @@ are shared.
 **Read:** `docs/01-architecture.md`, `docs/11-decisions.md`.
 
 **Tasks**
-- [ ] Confirm the final name (`docs/11-decisions.md` D1). Default: project **Amber**,
+- [x] Confirm the final name (`docs/11-decisions.md` D1). Default: project **Amber**,
       distribution `amber-compiler`, import package `amber`, CLI `amber`. If the user picks a
       different name, rename once now (there is no other rename step).
-- [ ] `uv init --package` (src layout), then set `[build-system]` to `hatchling` in
+- [x] `uv init --package` (src layout), then set `[build-system]` to `hatchling` in
       `pyproject.toml` (distribution name `amber-compiler`, package dir `src/amber`), Python
       `>=3.12`, dependencies and extras from `CLAUDE.md`. Add `amber = "amber.cli.app:main"`
       console script.
-- [ ] `LICENSE` Apache-2.0 (D2), `README.md` stub (title, one paragraph, "under construction"),
+- [x] `LICENSE` Apache-2.0 (D2), `README.md` stub (title, one paragraph, "under construction"),
       `CHANGELOG.md` (Keep a Changelog), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor
       Covenant), `SECURITY.md`.
-- [ ] `.gitignore` (Python, `.amber/`, `*.env`, `examples/*/.amber/`, `.venv`), `.editorconfig`.
-- [ ] `ruff` config (line length 100, rules: E,F,I,B,UP,SIM,RUF), `pyright` config
+- [x] `.gitignore` (Python, `.amber/`, `*.env`, `examples/*/.amber/`, `.venv`), `.editorconfig`.
+- [x] `ruff` config (line length 100, rules: E,F,I,B,UP,SIM,RUF), `pyright` config
       (`typeCheckingMode = "standard"`, `strict = ["src/amber/trace", "src/amber/align", "src/amber/compile"]`).
-- [ ] `pytest` config: markers `live` (needs model access), `slow`; `asyncio_mode = "auto"`.
-- [ ] `.pre-commit-config.yaml`: ruff, ruff-format, pyright (local hook), gitleaks.
-- [ ] `.github/workflows/ci.yml`: matrix 3.12/3.13 on ubuntu + macos; steps: `uv sync
+- [x] `pytest` config: markers `live` (needs model access), `slow`; `asyncio_mode = "auto"`.
+- [x] `.pre-commit-config.yaml`: ruff, ruff-format, pyright (local hook), gitleaks.
+- [x] `.github/workflows/ci.yml`: matrix 3.12/3.13 on ubuntu + macos; steps: `uv sync
       --all-extras`, ruff, pyright, `pytest -q -m "not live"` with coverage upload as artifact.
-- [ ] `.github/workflows/release.yml`: on tag `v*` build sdist+wheel with `uv build` and
+- [x] `.github/workflows/release.yml`: on tag `v*` build sdist+wheel with `uv build` and
       publish to PyPI with Trusted Publishing (OIDC). Do not run it yet.
-- [ ] `Makefile` targets: `setup`, `test`, `lint`, `demo`, `drift`, `bench`, `ui`.
-- [ ] `src/amber/cli/app.py`: typer app with `--version`, `--json` global option plumbing,
+- [x] `Makefile` targets: `setup`, `test`, `lint`, `demo`, `drift`, `bench`, `ui`.
+- [x] `src/amber/cli/app.py`: typer app with `--version`, `--json` global option plumbing,
       `init` command creating `.amber/` + `amber.toml` (D5: resolve model IDs via
       `anthropic.models.list()` when an API key is present; else write the documented
       defaults and a comment).
-- [ ] `PROGRESS.md` created with the P0 entry.
+- [x] `PROGRESS.md` created with the P0 entry.
 
 **Acceptance**
 ```bash

@@ -135,7 +135,7 @@ amber/
 4. Run the phase's acceptance commands exactly as written. Paste the key output lines into
    `PROGRESS.md`. Only then tick the boxes in `PLAN.md`.
 5. If a spec conflicts with reality (an API changed, a flag does not exist), verify against
-   the installed version (`uv run python -c "import mcp, anthropic; print(mcp.__version__, anthropic.__version__)"`,
+   the installed version (`uv run python -c "from importlib.metadata import version; print(version('mcp'), version('anthropic'))"`,
    `claude --help`), fix the spec in `docs/` with a short note, and continue.
 6. Ask the user only for items marked **ASK** in `docs/11-decisions.md`. Everything else has
    a default; take it and note it.

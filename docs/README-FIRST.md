@@ -38,7 +38,7 @@ Rules of engagement:
 - Take every default in docs/11-decisions.md and note it in PROGRESS.md. The only question you
   may ask me now is D1 (name/package name) — ask it with the facts from that file, then wait
   for my answer before P0.
-- Before P2, verify the installed API surfaces: `uv run python -c "import mcp, anthropic; print(mcp.__version__, anthropic.__version__)"`
+- Before P2, verify the installed API surfaces: `uv run python -c "from importlib.metadata import version; print(version('mcp'), version('anthropic'))"`
   and `claude --help`. If a spec snippet in docs/ does not match the installed version, fix the
   doc with a short note and continue; do not silently diverge.
 - Write tests first where the spec gives exact behaviour (trace mapping, canonicalization,
