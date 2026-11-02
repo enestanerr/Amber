@@ -18,6 +18,15 @@ _AMBER_ENV = (
 )
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--update-golden",
+        action="store_true",
+        default=False,
+        help="Rewrite golden files (tests/unit/compile/golden) instead of comparing.",
+    )
+
+
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     markexpr = str(config.getoption("-m") or "")
     if "live" in markexpr:

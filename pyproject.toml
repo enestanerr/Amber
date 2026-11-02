@@ -72,7 +72,7 @@ include = ["src/amber", "README.md", "LICENSE", "CHANGELOG.md", "pyproject.toml"
 line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
-extend-exclude = ["programs", "examples/*/programs", ".amber", "*.md", "docs"]
+extend-exclude = ["programs", "examples/*/programs", ".amber", "*.md", "docs", "tests/unit/compile/golden"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
@@ -96,7 +96,7 @@ docstring-code-format = true
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 include = ["src", "tests"]
-exclude = ["**/__pycache__", ".venv", "programs", "examples/*/programs", ".amber"]
+exclude = ["**/__pycache__", ".venv", "programs", "examples/*/programs", ".amber", "tests/unit/compile/golden"]
 strict = ["src/amber/trace", "src/amber/align", "src/amber/compile"]
 venvPath = "."
 venv = ".venv"

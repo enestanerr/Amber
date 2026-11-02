@@ -1,0 +1,33 @@
+"""{{ workflow }} v{{ version }} — compiled by amber from {{ n_traces }} recorded run(s).
+
+Skeleton hash {{ skeleton_hash }}. Deterministic structure; the model only filled the typed holes
+marked ``AMBER-HOLE``. Review before running live: this is ordinary Python.
+"""
+
+from __future__ import annotations
+
+{% for line in stdlib_imports %}
+{{ line }}
+{% endfor %}
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from amber.runtime import Context, program
+
+
+{{ inputs_class }}
+
+
+{{ output_class }}
+{% for block in hole_blocks %}
+
+
+{{ block }}
+{% endfor %}
+
+
+@program(workflow={{ workflow | tojson }}, version={{ version }})
+def run(inputs: Inputs, ctx: Context) -> Output:
+{% for line in body %}
+    {{ line }}
+{% endfor %}

@@ -1,0 +1,31 @@
+{
+  "gate_step1": [
+    {
+      "prompt": "Decide whether an alert should be posted. Look at the count in `r0`: when it is above two, answer go=true and explain the threshold in `reason`; otherwise answer go=false.",
+      "fields": [
+        {"name": "go", "type": "bool", "description": "Whether to post the alert."},
+        {"name": "reason", "type": "str", "description": "One sentence justifying the decision."}
+      ],
+      "rationale": "The alert was posted only when the recorded count exceeded two."
+    }
+  ],
+  "transform_step1": [
+    {
+      "python_source": "def transform_step1(inputs, r0):\n    return {\"limit\": \"wrong\"}\n",
+      "rationale": "first attempt (deliberately wrong for the repair-loop test)"
+    },
+    {
+      "python_source": "def transform_step1(inputs, r0):\n    return {\"limit\": r0[\"count\"] * 2}\n",
+      "rationale": "second attempt: limit is twice the recorded count"
+    }
+  ],
+  "judgment_step1": [
+    {
+      "prompt": "Pick a label for the item described in `inputs`; answer with one of the known labels.",
+      "fields": [
+        {"name": "label", "type": "str", "description": "The label.", "enum": ["bug", "ui"]}
+      ],
+      "rationale": "Recorded labels are drawn from a two-value set."
+    }
+  ]
+}

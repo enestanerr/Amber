@@ -1,0 +1,49 @@
+# {{ workflow }} — program v{{ version }}
+
+> [!WARNING]
+> Review `program.py` before running it live. It is ordinary Python generated from your
+> recordings; the model only filled the typed holes listed below, and every fill was checked
+> against the recordings, but you are responsible for what runs against your servers.
+
+- compiled: {{ created_at }}
+- source traces: {{ traces | join(", ") }}
+- skeleton hash: `{{ skeleton_hash }}` · program hash: `{{ program_hash }}`
+- usable: **{{ "yes" if usable else "no" }}**{% if not usable %} (verify has not passed for every source trace){% endif %}
+
+## Steps
+
+| # | tool | kind | provenance | in |
+|---|---|---|---|---|
+{% for s in steps -%}
+| {{ s.idx + 1 }} | `{{ s.tool }}`{% if s.effect == "write" %} (write){% endif %} | {{ s.kind }}{% if s.conditional %} · conditional{% endif %}{% if s.observe %} · observe{% endif %} | {{ s.provenance }} | {{ s.present }} |
+{% endfor -%}
+{% for p in pruned -%}
+| – | `{{ p.tool }}` (pruned) | | {{ p.reason }} | |
+{% endfor %}
+
+## Holes
+
+{% if holes %}{% for h in holes -%}
+### `{{ h.id }}` ({{ h.kind }}{% if h.downgraded %}, downgraded from transform{% endif %}) — {{ "accepted" if h.accepted else "NOT accepted" }} after {{ h.attempts }} attempt(s)
+
+{{ h.rationale or "_no rationale recorded_" }}
+
+{% if h.notes %}{% for n in h.notes %}- {{ n }}
+{% endfor %}{% endif %}
+{% endfor %}{% else %}_No holes: the whole program is deterministic._
+{% endif %}
+
+## Verify
+
+{% if verify_rows %}| trace | calls | llm steps | result | divergence |
+|---|---|---|---|---|
+{% for r in verify_rows -%}
+| {{ r.trace }} | {{ r.calls }} | {{ r.llm }} | {{ r.status }} | {{ r.divergence }} |
+{% endfor %}{% else %}_Not verified yet — run `amber verify {{ workflow }}`._
+{% endif %}
+
+## Warnings
+
+{% if warnings %}{% for w in warnings %}- {{ w }}
+{% endfor %}{% else %}_none_
+{% endif %}
