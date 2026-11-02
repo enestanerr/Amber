@@ -172,7 +172,7 @@ def test_conditional_step_without_separator_gets_gate() -> None:
 def _page_traces(posts: list[bool], snapshots: list[str]) -> list[Trace]:
     out = []
     for i, (post, snap) in enumerate(zip(posts, snapshots, strict=True)):
-        calls = [("web.snapshot", {}, snap)]
+        calls: list[Any] = [("web.snapshot", {}, snap)]
         if post:
             calls.append(
                 ("alerts.post", {"text": f"prices changed on day {i}, see list"}, {"ok": 1})
