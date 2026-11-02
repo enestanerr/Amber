@@ -320,3 +320,50 @@ $ AMBER_MODEL_BACKEND=recorded uv run amber compile weekly-report
 ```
 
 Full suite: 202 passed, 1 skipped. ruff + pyright clean (strict for `compile/`).
+
+## 2026-11-02 — P5 Verify (cassette replay)
+
+**Built**
+
+- `runtime/backends/cassette.py`: `CassetteBackend(trace, manifest, strict_order)` — expected
+  calls are the kept steps' calls of that trace (`manifest.trace_calls`, so pruned
+  exploratory calls are skipped) prefixed by `prefix_calls` for resumed traces; args are
+  canonicalized and masked with `manifest.volatile_paths` on both sides; `ReplayDivergence`
+  (exit 3) carries `step_idx`, expected/actual, a ≤ 40-line unified diff and a hint (order
+  differs / argument path / extra call / skipped call); `--unordered` matches any pending
+  call; `llm()` serves the recorded unknown leaves (`LlmStep.field_paths`) validated against
+  the schema, gates return `go = step present`, and context keys are checked against the
+  manifest; `now()` is the trace's `created_at`.
+- `runtime/verify.py`: `replay`, `ReplayReport`/`VerifyReport` (table, rows, JSON),
+  `verify_version`, `mark_usable` (only a full-source-set verify can flip `usable`; also
+  rewrites the REPORT.md verify section), `replay_from_paths` for the generated
+  `tests/test_replay.py`. Output comparison: Output fields vs the recorded final result keys.
+- `runtime/judgment.py`: runtime judgment call (prompt + shrunk context JSON carrying
+  `step_id`) and `--live-llm` agreement (`exact` for enums/bools/numbers, `JudgeOut` for
+  free text); never affects `usable`.
+- Compile hook: `amber compile` now runs verify on all source traces and marks the version
+  usable; the manifest gained `trace_calls`, `trace_inputs` (declared + inferred values per
+  trace) and `LlmStep.field_paths`.
+- CLI `amber verify <wf> [--version N] [--trace ID]... [--live-llm] [--unordered] [--json]`,
+  exit 3 on failure (via `cli._output.fail`, so the code is visible even when the Typer app is
+  invoked directly). The recorded model backend now finds `step_id` inside rendered prompts.
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run pytest -q tests/unit/runtime/test_cassette.py
+9 passed   (wrong tool, wrong arg, extra call, missing/leftover, volatile masked, unordered,
+            pruned calls skipped, recorded llm + validation, resumed prefix)
+
+$ AMBER_MODEL_BACKEND=recorded uv run amber compile weekly-report && uv run amber verify weekly-report
+  holes filled 2/2 · usable: yes
+│ t1 │ 5/5 │ 1 │ PASS │   │ t2 │ 5/5 │ 1 │ PASS │   │ t3 │ 5/5 │ 1 │ PASS │   3/3 PASS
+verify exit=0
+
+$ uv run amber verify weekly-report --trace t_broken; echo $?
+│ t_broken │ 1/6 (+5 left) │ 0 │ FAIL │ replay diverged at call 1: expected shop.top_products, got shop.list_orders …
+error: 1 of 1 traces diverged
+3
+```
+
+Full suite: 221 passed, 1 skipped. ruff + pyright clean.

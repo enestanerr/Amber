@@ -297,19 +297,19 @@ test -f programs/weekly-report/v1/program.py && uv run python -c "import ast,sys
 **Read:** `docs/04-compiler.md` §E, `docs/05-runtime.md` §1–2.
 
 **Tasks**
-- [ ] `runtime/backends/cassette.py`: `CassetteBackend(trace, volatile_paths, strict_order=True)`
+- [x] `runtime/backends/cassette.py`: `CassetteBackend(trace, volatile_paths, strict_order=True)`
       — queue of expected calls; `tool()` canonicalizes the request, masks volatile paths,
       compares with the head of the queue (or any pending call when `--unordered`), returns the
       recorded result; raises `ReplayDivergence(expected, actual, step_idx)` with a unified diff
       of canonical JSON. `llm()` → `RecordedLLMBackend` returns the recorded Unknown values for
       that step validated against the schema (or, with `--live-llm`, calls the real backend and
       records the comparison).
-- [ ] `runtime/verify.py`: `replay(program_path, trace) -> ReplayReport` (status, consumed
+- [x] `runtime/verify.py`: `replay(program_path, trace) -> ReplayReport` (status, consumed
       calls, leftover calls, divergence, output equality).
-- [ ] CLI `amber verify <workflow> [--version N] [--trace ID] [--live-llm] [--unordered]
+- [x] CLI `amber verify <workflow> [--version N] [--trace ID] [--live-llm] [--unordered]
       [--json]` → table per trace; exit 3 on any failure. Also runnable as plain pytest via the
       generated `tests/test_replay.py`.
-- [ ] Hook verify into compile: compile marks the version `usable: true` only if verify passes
+- [x] Hook verify into compile: compile marks the version `usable: true` only if verify passes
       for all source traces (`REPORT.md` includes the per-trace table).
 
 **Acceptance**

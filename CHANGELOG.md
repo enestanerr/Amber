@@ -8,6 +8,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Verify (P5): cassette replay of every source trace (volatile masking, recorded `llm()`
+  values, divergence diffs with hints, `--unordered`, `--live-llm` agreement), compile marks
+  versions usable only after replay passes; `amber verify` (exit 3 on failure).
 - Compile (P4): deterministic codegen (`program.py`, `manifest.json`, replay test, REPORT.md),
   typed holes verified against recordings, structured-output synthesizer with repair loop and
   transform→judgment downgrade, sandbox and lint, program versions, model backends
