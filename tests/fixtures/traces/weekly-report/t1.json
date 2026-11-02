@@ -12,7 +12,7 @@
         "week": "2026-W42"
       },
       "call_id": "toolu_01",
-      "duration_ms": 40,
+      "duration_ms": null,
       "idx": 1,
       "is_error": false,
       "kind": "tool_call",
@@ -22,7 +22,7 @@
         "start": "2026-10-12"
       },
       "result_kind": "json",
-      "started_at": "2026-10-19T09:00:03Z",
+      "started_at": null,
       "tool": "shop.week_range"
     },
     {
@@ -31,7 +31,7 @@
         "until": "2026-10-18"
       },
       "call_id": "toolu_02",
-      "duration_ms": 210,
+      "duration_ms": null,
       "idx": 2,
       "is_error": false,
       "kind": "tool_call",
@@ -193,7 +193,7 @@
         }
       ],
       "result_kind": "json",
-      "started_at": "2026-10-19T09:00:06Z",
+      "started_at": null,
       "tool": "shop.list_orders"
     },
     {
@@ -203,7 +203,7 @@
         "until": "2026-10-18"
       },
       "call_id": "toolu_03",
-      "duration_ms": 95,
+      "duration_ms": null,
       "idx": 3,
       "is_error": false,
       "kind": "tool_call",
@@ -241,7 +241,7 @@
         }
       ],
       "result_kind": "json",
-      "started_at": "2026-10-19T09:00:09Z",
+      "started_at": null,
       "tool": "shop.top_products"
     },
     {
@@ -249,7 +249,7 @@
         "as_of": "2026-10-11"
       },
       "call_id": "toolu_04",
-      "duration_ms": 130,
+      "duration_ms": null,
       "idx": 4,
       "is_error": false,
       "kind": "tool_call",
@@ -293,7 +293,7 @@
         }
       ],
       "result_kind": "json",
-      "started_at": "2026-10-19T09:00:12Z",
+      "started_at": null,
       "tool": "shop.rfm_snapshot"
     },
     {
@@ -307,17 +307,17 @@
         "text": "Week 2026-W42 closed with 8 orders totalling $843.00. Brass Hurricane Lantern led revenue at $336.00 across 7 units. Compared with the snapshot as of 2026-10-11, 2 customers moved up a frequency band. Returning customers placed 2 of the orders. Full top-5 list and RFM table are in the shop dashboard."
       },
       "call_id": "toolu_05",
-      "duration_ms": 180,
+      "duration_ms": null,
       "idx": 6,
       "is_error": false,
       "kind": "tool_call",
       "parent_call_id": null,
       "result": {
         "ok": true,
-        "ts": "1792400400.000100"
+        "ts": "1760864400.000100"
       },
       "result_kind": "json",
-      "started_at": "2026-10-19T09:00:15Z",
+      "started_at": null,
       "tool": "slack.post_message"
     }
   ],
@@ -352,21 +352,88 @@
   "task_prompt": "Pull the orders for week 2026-W42, compute how RFM segments shifted versus the previous week and the top 5 products, then post a 5-sentence summary to #eng on Slack. Use the shop and slack tools only.",
   "tools": [
     {
-      "canonical": "shop.week_range",
+      "canonical": "builtin.Bash",
+      "effect": "unknown",
+      "hash": "44136fa355b3678a",
+      "input_schema": {},
+      "name": "Bash",
+      "output_schema": null,
+      "server": "builtin"
+    },
+    {
+      "canonical": "builtin.Edit",
+      "effect": "write",
+      "hash": "44136fa355b3678a",
+      "input_schema": {},
+      "name": "Edit",
+      "output_schema": null,
+      "server": "builtin"
+    },
+    {
+      "canonical": "builtin.Glob",
       "effect": "read",
-      "hash": "37121b67dd0def61",
+      "hash": "44136fa355b3678a",
+      "input_schema": {},
+      "name": "Glob",
+      "output_schema": null,
+      "server": "builtin"
+    },
+    {
+      "canonical": "builtin.Grep",
+      "effect": "read",
+      "hash": "44136fa355b3678a",
+      "input_schema": {},
+      "name": "Grep",
+      "output_schema": null,
+      "server": "builtin"
+    },
+    {
+      "canonical": "builtin.Read",
+      "effect": "read",
+      "hash": "93f80aab9fb34b5e",
       "input_schema": {
         "properties": {
-          "week": {
+          "file_path": {
             "type": "string"
           }
         },
         "required": [
-          "week"
+          "file_path"
         ],
         "type": "object"
       },
-      "name": "week_range",
+      "name": "Read",
+      "output_schema": null,
+      "server": "builtin"
+    },
+    {
+      "canonical": "builtin.WebFetch",
+      "effect": "read",
+      "hash": "44136fa355b3678a",
+      "input_schema": {},
+      "name": "WebFetch",
+      "output_schema": null,
+      "server": "builtin"
+    },
+    {
+      "canonical": "builtin.Write",
+      "effect": "write",
+      "hash": "44136fa355b3678a",
+      "input_schema": {},
+      "name": "Write",
+      "output_schema": null,
+      "server": "builtin"
+    },
+    {
+      "canonical": "shop.list_customers",
+      "effect": "read",
+      "hash": "c8a1ac469a826ea3",
+      "input_schema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_customers",
       "output_schema": null,
       "server": "shop"
     },
@@ -390,6 +457,25 @@
         "type": "object"
       },
       "name": "list_orders",
+      "output_schema": null,
+      "server": "shop"
+    },
+    {
+      "canonical": "shop.rfm_snapshot",
+      "effect": "read",
+      "hash": "42b0e5bd30f45082",
+      "input_schema": {
+        "properties": {
+          "as_of": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "as_of"
+        ],
+        "type": "object"
+      },
+      "name": "rfm_snapshot",
       "output_schema": null,
       "server": "shop"
     },
@@ -421,26 +507,26 @@
       "server": "shop"
     },
     {
-      "canonical": "shop.rfm_snapshot",
+      "canonical": "shop.week_range",
       "effect": "read",
-      "hash": "42b0e5bd30f45082",
+      "hash": "37121b67dd0def61",
       "input_schema": {
         "properties": {
-          "as_of": {
+          "week": {
             "type": "string"
           }
         },
         "required": [
-          "as_of"
+          "week"
         ],
         "type": "object"
       },
-      "name": "rfm_snapshot",
+      "name": "week_range",
       "output_schema": null,
       "server": "shop"
     },
     {
-      "canonical": "shop.list_customers",
+      "canonical": "slack.list_channels",
       "effect": "read",
       "hash": "c8a1ac469a826ea3",
       "input_schema": {
@@ -448,9 +534,9 @@
         "required": [],
         "type": "object"
       },
-      "name": "list_customers",
+      "name": "list_channels",
       "output_schema": null,
-      "server": "shop"
+      "server": "slack"
     },
     {
       "canonical": "slack.post_message",
@@ -474,25 +560,6 @@
       "name": "post_message",
       "output_schema": null,
       "server": "slack"
-    },
-    {
-      "canonical": "builtin.Read",
-      "effect": "read",
-      "hash": "93f80aab9fb34b5e",
-      "input_schema": {
-        "properties": {
-          "file_path": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "file_path"
-        ],
-        "type": "object"
-      },
-      "name": "Read",
-      "output_schema": null,
-      "server": "builtin"
     }
   ],
   "workflow": "weekly-report"

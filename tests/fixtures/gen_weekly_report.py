@@ -1,25 +1,39 @@
-"""Seeded generator for the weekly-report fixtures (synthetic "Northwind Lanterns Co." data).
-
-Writes ``tests/fixtures/traces/weekly-report/{t1,t2,t3,t_broken}.json``. Run:
+"""Seeded generator for every weekly-report fixture (synthetic "Northwind Lanterns Co." data).
 
     uv run python tests/fixtures/gen_weekly_report.py
 
-t2 contains one exploratory ``builtin.Read`` (optional, unreferenced → pruned by align);
-``t_broken`` is t1 with steps 2 and 3 swapped plus one extra call (verify must diverge).
+Writes:
+
+* ``claude_stream/weekly_report_run{1,2,3}.jsonl`` — three ``claude -p`` stream-json runs
+  (run 2 has one exploratory ``Read``; each file has a ``stream_event``, a
+  ``rate_limit_event`` and one ANSI-prefixed line that the recorder must ignore/strip);
+* ``traces/weekly-report/{t1,t2,t3}.json`` — the mapper's golden output for those runs
+  (fixed ids and timestamps) after schema enrichment with the mock servers' tool schemas;
+* ``traces/weekly-report/t_broken.json`` — t1 with steps 2 and 3 swapped plus an extra call;
+* ``claude_transcript/session.jsonl`` — one Claude Code transcript with a compaction
+  boundary, a sidechain line, a foreign-session line and 4 tool calls;
+* ``mcp_proxy/shop-1234.jsonl``, ``mcp_proxy/slack-1235.jsonl`` — proxy fragments.
 """
 
 from __future__ import annotations
 
+import json
 import random
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from amber.trace.canonical import ResultKind
-from amber.trace.models import Outcome, Thought, ToolCall, ToolSchema, Trace, Usage
-from amber.util.json import write_json
+from amber.adapters.base import RecordRequest
+from amber.adapters.claude_stream import record_from_lines
+from amber.adapters.enrich import apply_tool_schemas
+from amber.trace.models import ToolSchema, Trace
+from amber.util.json import dumps_compact, write_json
 
-OUT = Path(__file__).parent / "traces" / "weekly-report"
+ROOT = Path(__file__).parent
+TRACES = ROOT / "traces" / "weekly-report"
+STREAM = ROOT / "claude_stream"
+TRANSCRIPT = ROOT / "claude_transcript"
+PROXY = ROOT / "mcp_proxy"
 
 WEEKS = {
     "2026-W42": ("2026-10-12", "2026-10-18"),
@@ -41,7 +55,7 @@ TASK = (
     "week and the top 5 products, then post a 5-sentence summary to #eng on Slack. "
     "Use the shop and slack tools only."
 )
-
+MODEL = "claude-sonnet-5-5"
 STR: dict[str, Any] = {"type": "string"}
 
 
@@ -49,39 +63,35 @@ def _schema(props: dict[str, Any], required: list[str]) -> dict[str, Any]:
     return {"type": "object", "properties": props, "required": required}
 
 
-TOOLS = [
-    ToolSchema(
-        server="shop",
-        name="week_range",
-        effect="read",
-        input_schema=_schema({"week": STR}, ["week"]),
+SHOP_SCHEMAS: dict[str, dict[str, Any]] = {
+    "week_range": _schema({"week": STR}, ["week"]),
+    "list_orders": _schema({"since": STR, "until": STR}, ["since", "until"]),
+    "top_products": _schema(
+        {"since": STR, "until": STR, "n": {"type": "integer", "default": 5}}, ["since", "until"]
     ),
-    ToolSchema(
-        server="shop",
-        name="list_orders",
-        effect="read",
-        input_schema=_schema({"since": STR, "until": STR}, ["since", "until"]),
-    ),
-    ToolSchema(
-        server="shop",
-        name="top_products",
-        effect="read",
-        input_schema=_schema(
-            {"since": STR, "until": STR, "n": {"type": "integer", "default": 5}}, ["since", "until"]
-        ),
-    ),
-    ToolSchema(
-        server="shop",
-        name="rfm_snapshot",
-        effect="read",
-        input_schema=_schema({"as_of": STR}, ["as_of"]),
-    ),
-    ToolSchema(server="shop", name="list_customers", effect="read", input_schema=_schema({}, [])),
+    "rfm_snapshot": _schema({"as_of": STR}, ["as_of"]),
+    "list_customers": _schema({}, []),
+}
+SLACK_SCHEMAS: dict[str, dict[str, Any]] = {
+    "post_message": _schema({"channel": STR, "text": STR}, ["channel", "text"]),
+    "list_channels": _schema({}, []),
+}
+TOOLS: list[ToolSchema] = [
+    *[
+        ToolSchema(server="shop", name=n, effect="read", input_schema=s)
+        for n, s in SHOP_SCHEMAS.items()
+    ],
     ToolSchema(
         server="slack",
         name="post_message",
         effect="write",
-        input_schema=_schema({"channel": STR, "text": STR}, ["channel", "text"]),
+        input_schema=SLACK_SCHEMAS["post_message"],
+    ),
+    ToolSchema(
+        server="slack",
+        name="list_channels",
+        effect="read",
+        input_schema=SLACK_SCHEMAS["list_channels"],
     ),
     ToolSchema(
         server="builtin",
@@ -89,6 +99,17 @@ TOOLS = [
         effect="read",
         input_schema=_schema({"file_path": STR}, ["file_path"]),
     ),
+]
+INIT_TOOLS = [
+    "Bash",
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "WebFetch",
+    *[f"mcp__shop__{n}" for n in SHOP_SCHEMAS],
+    *[f"mcp__slack__{n}" for n in SLACK_SCHEMAS],
 ]
 
 
@@ -140,7 +161,15 @@ def week_data(week: str) -> dict[str, Any]:
         f"Compared with the snapshot as of {as_of}, {rng.randint(1, 3)} customers moved up "
         "a frequency band. "
         f"Returning customers placed {rng.randint(2, 5)} of the orders. "
-        f"Full top-5 list and RFM table are in the shop dashboard."
+        "Full top-5 list and RFM table are in the shop dashboard."
+    )
+    thought1 = (
+        f"I'll resolve the week range for {week} first, then pull the orders, "
+        "the top products and the previous RFM snapshot."
+    )
+    thought2 = (
+        "Comparing the snapshot with this week's orders I can summarize "
+        "the shift and the top products in five sentences."
     )
     return {
         "start": start,
@@ -150,83 +179,310 @@ def week_data(week: str) -> dict[str, Any]:
         "as_of": as_of,
         "rfm": rfm,
         "summary": summary,
+        "thought1": thought1,
+        "thought2": thought2,
+        "calls": [
+            ("mcp__shop__week_range", {"week": week}, {"start": start, "end": end}),
+            ("mcp__shop__list_orders", {"since": start, "until": end}, orders),
+            ("mcp__shop__top_products", {"since": start, "until": end, "n": 5}, top),
+            ("mcp__shop__rfm_snapshot", {"as_of": as_of}, rfm),
+        ],
+        "post": (
+            "mcp__slack__post_message",
+            {"channel": "#eng", "text": summary},
+            {"ok": True, "ts": "1760864400.000100"},
+        ),
     }
 
 
-def build(trace_id: str, week: str, created_at: datetime, *, with_read: bool, cost: float) -> Trace:
+# --- stream-json ---------------------------------------------------------------
+
+
+def _assistant(
+    session_id: str, msg_id: str, content: list[dict[str, Any]], usage: dict[str, int]
+) -> dict[str, Any]:
+    return {
+        "type": "assistant",
+        "session_id": session_id,
+        "message": {
+            "id": msg_id,
+            "role": "assistant",
+            "model": MODEL,
+            "content": content,
+            "usage": usage,
+        },
+    }
+
+
+def _tool_result(session_id: str, call_id: str, content: Any) -> dict[str, Any]:
+    return {
+        "type": "user",
+        "session_id": session_id,
+        "message": {
+            "role": "user",
+            "content": [{"type": "tool_result", "tool_use_id": call_id, "content": content}],
+        },
+    }
+
+
+def stream_lines(week: str, *, session_id: str, with_read: bool, cost: float) -> list[str]:
     d = week_data(week)
-    events: list[Thought | ToolCall] = []
-    calls = 0
-
-    def call(
-        tool: str, args: dict[str, Any], result: Any, kind: ResultKind = "json", ms: int = 120
-    ) -> None:
-        nonlocal calls
-        calls += 1
-        events.append(
-            ToolCall(
-                idx=len(events),
-                call_id=f"toolu_{calls:02d}",
-                tool=tool,
-                args=args,
-                result=result,
-                result_kind=kind,
-                started_at=created_at + timedelta(seconds=3 * calls),
-                duration_ms=ms,
-            )
-        )
-
-    events.append(
-        Thought(
-            idx=0,
-            text=f"I'll resolve the week range for {week} first, then pull the orders, "
-            "the top products and the previous RFM snapshot.",
-        )
-    )
-    call("shop.week_range", {"week": week}, {"start": d["start"], "end": d["end"]}, ms=40)
-    call("shop.list_orders", {"since": d["start"], "until": d["end"]}, d["orders"], ms=210)
-    call("shop.top_products", {"since": d["start"], "until": d["end"], "n": 5}, d["top"], ms=95)
-    call("shop.rfm_snapshot", {"as_of": d["as_of"]}, d["rfm"], ms=130)
+    usage = {"input_tokens": 1200, "output_tokens": 40}
+    out: list[dict[str, Any]] = [
+        {
+            "type": "system",
+            "subtype": "init",
+            "session_id": session_id,
+            "model": MODEL,
+            "tools": INIT_TOOLS,
+            "mcp_servers": [
+                {"name": "shop", "status": "connected"},
+                {"name": "slack", "status": "connected"},
+            ],
+            "cwd": "/work/weekly-report",
+        },
+        _assistant(session_id, "msg_1", [{"type": "text", "text": d["thought1"]}], usage),
+    ]
+    n = 0
+    calls = list(d["calls"])
     if with_read:
-        call("builtin.Read", {"file_path": "task.md"}, TASK.format(week=week), kind="text", ms=5)
-    events.append(
-        Thought(
-            idx=len(events),
-            text="Comparing the snapshot with this week's orders I can summarize "
-            "the shift and the top products in five sentences.",
+        calls.append(("Read", {"file_path": "task.md"}, TASK.format(week=week)))
+    for name, args, result in calls:
+        n += 1
+        call_id = f"toolu_{n:02d}"
+        block = {"type": "tool_use", "id": call_id, "name": name, "input": args}
+        out.append(_assistant(session_id, f"msg_{n + 1}", [block], usage))
+        content: Any = (
+            result if isinstance(result, str) else [{"type": "text", "text": json.dumps(result)}]
         )
+        out.append(_tool_result(session_id, call_id, content))
+        if n == 2:
+            out.append(
+                {
+                    "type": "stream_event",
+                    "session_id": session_id,
+                    "event": {"type": "message_start"},
+                }
+            )
+            out.append(
+                {
+                    "type": "rate_limit_event",
+                    "session_id": session_id,
+                    "rate_limit_info": {"status": "allowed"},
+                }
+            )
+    out.append(_assistant(session_id, "msg_t2", [{"type": "text", "text": d["thought2"]}], usage))
+    n += 1
+    name, args, result = d["post"]
+    call_id = f"toolu_{n:02d}"
+    block = {"type": "tool_use", "id": call_id, "name": name, "input": args}
+    out.append(_assistant(session_id, f"msg_{n + 1}", [block], usage))
+    out.append(_tool_result(session_id, call_id, [{"type": "text", "text": json.dumps(result)}]))
+    out.append(
+        {
+            "type": "result",
+            "subtype": "success",
+            "is_error": False,
+            "session_id": session_id,
+            "duration_ms": 18000 + n * 250,
+            "num_turns": n + 1,
+            "total_cost_usd": cost,
+            "result": "Posted the weekly summary to #eng.",
+            "usage": {
+                "input_tokens": 5100 + n * 37,
+                "cache_read_input_tokens": 12000,
+                "cache_creation_input_tokens": 800,
+                "output_tokens": 900 + n * 11,
+            },
+        }
     )
-    call(
-        "slack.post_message",
-        {"channel": "#eng", "text": d["summary"]},
-        {"ok": True, "ts": f"{int(created_at.timestamp())}.000100"},
-        ms=180,
+    lines = [dumps_compact(o) for o in out]
+    # one ANSI-prefixed line (terminal clear sequence) the recorder must strip
+    idx = next(i for i, o in enumerate(out) if o["type"] == "rate_limit_event")
+    lines[idx] = "\x1b[2K" + lines[idx]
+    return lines
+
+
+# --- transcript ------------------------------------------------------------------
+
+
+def transcript_lines() -> list[str]:
+    week = "2026-W42"
+    d = week_data(week)
+    sid = "sess-A"
+    t0 = datetime(2026, 10, 19, 9, 0, tzinfo=UTC)
+    out: list[dict[str, Any]] = []
+    counter = 0
+
+    def line(kind: str, body: dict[str, Any], *, parent: str | None, offset: int) -> str:
+        nonlocal counter
+        counter += 1
+        uid = f"u{counter}"
+        stamp = (t0 + timedelta(seconds=offset)).isoformat().replace("+00:00", "Z")
+        out.append(
+            {
+                "type": kind,
+                "uuid": uid,
+                "parentUuid": parent,
+                "sessionId": sid,
+                "isSidechain": False,
+                "timestamp": stamp,
+                "cwd": "/work/weekly-report",
+                "version": "2.1.316",
+                "gitBranch": "main",
+                **body,
+            }
+        )
+        return uid
+
+    def assistant(content: list[dict[str, Any]], out_tokens: int) -> dict[str, Any]:
+        return {
+            "message": {
+                "role": "assistant",
+                "model": MODEL,
+                "content": content,
+                "usage": {"input_tokens": 1600, "output_tokens": out_tokens},
+            }
+        }
+
+    prev = line(
+        "user",
+        {"message": {"role": "user", "content": TASK.format(week=week)}},
+        parent=None,
+        offset=0,
     )
-    return Trace(
-        id=trace_id,
-        workflow="weekly-report",
-        created_at=created_at,
-        adapter="claude-stream",
-        harness={"name": "claude-code", "version": "2.1.316", "model": "claude-sonnet-5-5"},
-        task_prompt=TASK.format(week=week),
-        inputs={"week": week},
-        tools=TOOLS,
-        events=list(events),
-        outcome=Outcome(
-            status="success",
-            final_text="Posted the weekly summary to #eng.",
-            usage=Usage(
-                input_tokens=5100 + calls * 37,
-                cache_read_tokens=12000,
-                cache_creation_tokens=800,
-                output_tokens=900 + calls * 11,
-            ),
-            cost_usd=cost,
-            duration_ms=18000 + calls * 250,
-            num_turns=calls + 1,
-        ),
-        session_id=f"s_{trace_id}",
+    prev = line(
+        "assistant", assistant([{"type": "text", "text": d["thought1"]}], 30), parent=prev, offset=2
     )
+    calls = [d["calls"][0], d["calls"][1], d["calls"][2], d["post"]]
+    for n, (name, args, result) in enumerate(calls, start=1):
+        if n == 3:
+            body = {
+                "subtype": "compact_boundary",
+                "content": "Conversation compacted",
+                "isMeta": False,
+            }
+            prev = line("system", body, parent=prev, offset=n * 10)
+        block = {"type": "tool_use", "id": f"toolu_{n:02d}", "name": name, "input": args}
+        prev = line("assistant", assistant([block], 50), parent=prev, offset=n * 10 + 1)
+        result_block = {
+            "type": "tool_result",
+            "tool_use_id": f"toolu_{n:02d}",
+            "content": [{"type": "text", "text": json.dumps(result)}],
+        }
+        body = {
+            "message": {"role": "user", "content": [result_block]},
+            "toolUseResult": {"summary": "ok"},
+        }
+        prev = line("user", body, parent=prev, offset=n * 10 + 2)
+        if n == 2:
+            out.append(
+                {
+                    "type": "assistant",
+                    "uuid": "side1",
+                    "parentUuid": prev,
+                    "sessionId": sid,
+                    "isSidechain": True,
+                    "timestamp": "2026-10-19T09:00:25Z",
+                    "message": {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "id": "toolu_side",
+                                "name": "Bash",
+                                "input": {"command": "ls"},
+                            }
+                        ],
+                    },
+                }
+            )
+    final = [{"type": "text", "text": "Posted the weekly summary to #eng."}]
+    line("assistant", assistant(final, 20), parent=prev, offset=60)
+    out.insert(
+        3,
+        {
+            "type": "user",
+            "uuid": "f1",
+            "parentUuid": None,
+            "sessionId": "sess-OLD",
+            "isSidechain": False,
+            "timestamp": "2026-10-12T09:00:00Z",
+            "message": {
+                "role": "user",
+                "content": "An older prompt copied from a previous session.",
+            },
+        },
+    )
+    return [dumps_compact(o) for o in out]
+
+
+# --- proxy fragments -------------------------------------------------------------
+
+
+def proxy_fragments() -> dict[str, list[str]]:
+    d = week_data("2026-W42")
+    t0 = datetime(2026, 10, 19, 9, 0, tzinfo=UTC)
+
+    def ts(seconds: int) -> str:
+        return (t0 + timedelta(seconds=seconds)).isoformat()
+
+    def tools(
+        server: str, schemas: dict[str, dict[str, Any]], read_only: dict[str, bool]
+    ) -> dict[str, Any]:
+        listing = [
+            {
+                "name": n,
+                "description": f"{n} (mock)",
+                "input_schema": s,
+                "annotations": {
+                    "read_only_hint": read_only[n],
+                    "destructive_hint": not read_only[n],
+                },
+            }
+            for n, s in schemas.items()
+        ]
+        return {"kind": "tools", "ts": ts(0), "server": server, "tools": listing}
+
+    def call(server: str, name: str, args: Any, result: Any, *, at: int, ms: int) -> dict[str, Any]:
+        return {
+            "kind": "call",
+            "ts": ts(at),
+            "server": server,
+            "tool": name.split("__")[-1],
+            "args": args,
+            "result": result,
+            "result_kind": "json",
+            "is_error": False,
+            "duration_ms": ms,
+            "schema_hash": "",
+        }
+
+    shop = [tools("shop", SHOP_SCHEMAS, dict.fromkeys(SHOP_SCHEMAS, True))]
+    for i, (name, args, result) in enumerate(d["calls"], start=1):
+        shop.append(call("shop", name, args, result, at=i * 5, ms=40 + i))
+    name, args, result = d["post"]
+    slack = [
+        tools("slack", SLACK_SCHEMAS, {"post_message": False, "list_channels": True}),
+        call("slack", name, args, result, at=40, ms=90),
+    ]
+    return {
+        "shop-1234.jsonl": [dumps_compact(o) for o in shop],
+        "slack-1235.jsonl": [dumps_compact(o) for o in slack],
+    }
+
+
+# --- traces (mapper goldens) ----------------------------------------------------
+
+
+def trace_from_stream(trace_id: str, week: str, lines: list[str], created_at: datetime) -> Trace:
+    request = RecordRequest(workflow="weekly-report", agent_command=[], inputs={"week": week})
+    rec = record_from_lines(
+        request, lines, task_prompt=TASK.format(week=week), trace_id=trace_id, created_at=created_at
+    )
+    trace = apply_tool_schemas(rec.trace, TOOLS)
+    trace.harness["version"] = "2.1.316"
+    return trace
 
 
 def broken_from(t1: Trace) -> Trace:
@@ -234,12 +490,15 @@ def broken_from(t1: Trace) -> Trace:
     data["id"] = "t_broken"
     data["session_id"] = "s_t_broken"
     ev = data["events"]
-    ev[2], ev[3] = ev[3], ev[2]  # swap list_orders and top_products
+    calls = [i for i, e in enumerate(ev) if e["kind"] == "tool_call"]
+    a, b = calls[1], calls[2]
+    ev[a], ev[b] = ev[b], ev[a]  # swap list_orders and top_products
     ev.append(
         {
             "kind": "tool_call",
             "idx": 0,
             "call_id": "toolu_99",
+            "parent_call_id": None,
             "tool": "shop.list_customers",
             "args": {},
             "result": [
@@ -262,18 +521,30 @@ def broken_from(t1: Trace) -> Trace:
     return Trace.model_validate(data)
 
 
+def _write_lines(path: Path, lines: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+
+
 def main() -> None:
     specs = [
-        ("t1", "2026-W42", datetime(2026, 10, 19, 9, 0, tzinfo=UTC), False, 0.031),
-        ("t2", "2026-W43", datetime(2026, 10, 26, 9, 0, tzinfo=UTC), True, 0.034),
-        ("t3", "2026-W44", datetime(2026, 11, 2, 9, 0, tzinfo=UTC), False, 0.030),
+        ("t1", 1, "2026-W42", datetime(2026, 10, 19, 9, 0, tzinfo=UTC), False, 0.031),
+        ("t2", 2, "2026-W43", datetime(2026, 10, 26, 9, 0, tzinfo=UTC), True, 0.034),
+        ("t3", 3, "2026-W44", datetime(2026, 11, 2, 9, 0, tzinfo=UTC), False, 0.030),
     ]
-    traces = [build(tid, week, at, with_read=rd, cost=cost) for tid, week, at, rd, cost in specs]
+    traces: list[Trace] = []
+    for tid, run, week, at, with_read, cost in specs:
+        lines = stream_lines(week, session_id=f"s_{tid}", with_read=with_read, cost=cost)
+        _write_lines(STREAM / f"weekly_report_run{run}.jsonl", lines)
+        traces.append(trace_from_stream(tid, week, lines, at))
     traces.append(broken_from(traces[0]))
-    OUT.mkdir(parents=True, exist_ok=True)
     for t in traces:
-        write_json(OUT / f"{t.id}.json", t.model_dump(mode="json"))
-        print("wrote", OUT / f"{t.id}.json", len(t.calls), "calls")
+        write_json(TRACES / f"{t.id}.json", t.model_dump(mode="json"))
+        print("wrote", TRACES / f"{t.id}.json", len(t.calls), "calls")
+    _write_lines(TRANSCRIPT / "session.jsonl", transcript_lines())
+    for name, lines in proxy_fragments().items():
+        _write_lines(PROXY / name, lines)
+    print("wrote stream, transcript and proxy fixtures")
 
 
 if __name__ == "__main__":
