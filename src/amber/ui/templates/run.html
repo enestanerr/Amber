@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% set r = detail.run %}
+{% block title %}Run {{ r.id }}{% endblock %}
+{% block content %}
+<h1>{{ r.workflow }} <span class="muted">v{{ r.version }}</span>
+  <span class="badge {{ 'ok' if r.status == 'ok' else ('warn' if r.status == 'stopped' else 'bad') }}">{{ r.status }}</span></h1>
+<p class="muted">{{ r.id }} · {{ r.mode }} · started {{ r.started_at[:19] }}{% if r.duration_s is not none %} · {{ "%.1f" | format(r.duration_s) }} s{% endif %}
+  · inputs <code>{{ r.inputs }}</code>{% if r.stop_kind %} · stopped by <strong>{{ r.stop_kind }}</strong>: {{ r.stop_detail }}{% endif %}</p>
+<div class="tiles">
+  <div class="tile"><div class="value">{{ r.steps }}</div><div class="label">steps</div></div>
+  <div class="tile"><div class="value">{{ r.llm_calls }}</div><div class="label">llm calls</div></div>
+  <div class="tile"><div class="value">{{ "{:,}".format(r.llm_input_tokens + r.llm_output_tokens) }}</div><div class="label">llm tokens</div></div>
+  <div class="tile"><div class="value">{{ r.agent_turns }}</div><div class="label">agent turns</div></div>
+</div>
+
+<h2>Steps</h2>
+<table>
+  <tr><th class="num">#</th><th>tool</th><th>status</th><th>args</th><th>result digest</th><th class="num">ms</th></tr>
+  {% for s in detail.steps %}
+  <tr><td class="num">{{ s.idx + 1 }}</td><td><code>{{ s.tool }}</code></td><td>{{ s.status }}</td><td><code>{{ s.args }}</code></td><td class="muted">{{ s.result_digest }}</td><td class="num">{{ s.duration_ms }}</td></tr>
+  {% else %}<tr><td colspan="6" class="muted">no steps recorded</td></tr>{% endfor %}
+</table>
+
+<div class="grid-2">
+  <div>
+    <h2>Guard events</h2>
+    <table><tr><th class="num">step</th><th>guard</th><th>severity</th><th>detail</th></tr>
+    {% for g in detail.guard_events %}<tr><td class="num">{{ g.idx + 1 }}</td><td>{{ g.guard }}</td><td><span class="badge {{ 'bad' if g.severity == 'hard' else ('warn' if g.severity == 'soft' else '') }}">{{ g.severity }}</span></td><td>{{ g.detail }}</td></tr>
+    {% else %}<tr><td colspan="4" class="muted">none</td></tr>{% endfor %}</table>
+  </div>
+  <div>
+    <h2>LLM calls</h2>
+    <table><tr><th>step</th><th>model</th><th class="num">in</th><th class="num">out</th><th>valid</th><th class="num">confidence</th></tr>
+    {% for l in detail.llm_calls %}<tr><td>{{ l.step_id }}</td><td>{{ l.model }}</td><td class="num">{{ l.input_tokens }}</td><td class="num">{{ l.output_tokens }}</td><td>{{ "yes" if l.valid else "no" }}</td><td class="num">{{ "%.2f" | format(l.confidence) if l.confidence is not none else "" }}</td></tr>
+    {% else %}<tr><td colspan="6" class="muted">none</td></tr>{% endfor %}</table>
+  </div>
+</div>
+
+<h2>Decisions</h2>
+<table><tr><th>ts</th><th>decision</th><th>reason</th><th>actor</th></tr>
+{% for d in detail.decisions %}<tr><td>{{ d.ts[:19] }}</td><td>{{ d.decision }}</td><td>{{ d.reason }}</td><td>{{ d.actor }}</td></tr>
+{% else %}<tr><td colspan="4" class="muted">none</td></tr>{% endfor %}</table>
+{% endblock %}

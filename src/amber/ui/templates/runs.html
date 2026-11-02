@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Runs{% if workflow %} · {{ workflow }}{% endif %}{% endblock %}
+{% block content %}
+<h1>Runs{% if workflow %} · {{ workflow }}{% endif %}</h1>
+<p class="muted">filter:
+  <a href="/runs">all</a>{% for wf in workflows %} · <a href="/runs?workflow={{ wf }}">{{ wf }}</a>{% endfor %}
+</p>
+<table>
+  <tr><th>run</th><th>workflow</th><th class="num">v</th><th>started</th><th>status</th><th>mode</th><th class="num">steps</th><th class="num">llm</th><th class="num">tokens</th><th class="num">cost</th><th class="num">s</th><th class="num">agent turns</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td><a href="/runs/{{ r.id }}">{{ r.id }}</a></td>
+    <td>{{ r.workflow }}</td>
+    <td class="num">{{ r.version }}</td>
+    <td>{{ r.started_at[:19] }}</td>
+    <td><span class="badge {{ 'ok' if r.status == 'ok' else ('warn' if r.status == 'stopped' else 'bad') }}">{{ r.status }}</span>{% if r.stop_kind %} <span class="muted">{{ r.stop_kind }}</span>{% endif %}</td>
+    <td>{{ r.mode }}</td>
+    <td class="num">{{ r.steps }}</td>
+    <td class="num">{{ r.llm_calls }}</td>
+    <td class="num">{{ "{:,}".format(r.llm_input_tokens + r.llm_output_tokens) }}</td>
+    <td class="num">{{ "n/a" if r.cost_usd is none else "$%.4f" | format(r.cost_usd) }}</td>
+    <td class="num">{{ "%.1f" | format(r.duration_s) if r.duration_s is not none else "" }}</td>
+    <td class="num">{{ r.agent_turns }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="12" class="muted">No runs yet. Run <code>amber run &lt;workflow&gt;</code>.</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Tokens per run</h2>
+{{ tokens_svg | safe }}
+<details><summary>table</summary>
+<table><tr><th>run</th><th class="num">agent baseline</th><th class="num">compiled llm</th></tr>
+{% for t in token_rows %}<tr><td>{{ t.label }}</td><td class="num">{{ "{:,}".format(t.agent) }}</td><td class="num">{{ "{:,}".format(t.compiled) }}</td></tr>{% endfor %}
+</table><p class="muted">baseline median {{ "{:,}".format(baseline) }} tokens</p></details>
+{% endblock %}

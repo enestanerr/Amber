@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<h1>Overview</h1>
+<div class="tiles">
+  <div class="tile"><div class="value">{{ tiles.runs }}</div><div class="label">runs</div></div>
+  <div class="tile"><div class="value">{{ "{:,}".format(tiles.llm_tokens) }}</div><div class="label">llm tokens spent by compiled runs</div></div>
+  <div class="tile"><div class="value">{{ "{:,}".format(tiles.tokens_saved) }}</div><div class="label">estimated agent tokens avoided (7 d)</div></div>
+  <div class="tile"><div class="value">{{ "n/a" if tiles.cost_avoided is none else tiles.cost_avoided }}</div><div class="label">cost avoided (needs a price table)</div></div>
+</div>
+
+<h2>Workflows</h2>
+<table>
+  <tr><th>workflow</th><th class="num">version</th><th>usable</th><th class="num">traces</th><th class="num">runs (7 d)</th><th class="num">stop rate</th><th class="num">agent median tok</th><th class="num">compiled llm tok</th><th class="num">tokens saved</th><th></th></tr>
+  {% for r in rows %}
+  <tr>
+    <td><a href="/programs/{{ r.workflow }}">{{ r.workflow }}</a></td>
+    <td class="num">{{ "v" ~ r.latest_version if r.latest_version else "–" }}</td>
+    <td>{% if r.usable %}<span class="badge ok">usable</span>{% else %}<span class="badge warn">not usable</span>{% endif %}</td>
+    <td class="num">{{ r.traces }}</td>
+    <td class="num">{{ r.runs_7d }}</td>
+    <td class="num">{{ "%.0f%%" | format(r.stop_rate * 100) }}</td>
+    <td class="num">{{ "{:,}".format(r.agent_median_tokens) }}</td>
+    <td class="num">{{ "{:,}".format(r.compiled_llm_tokens) }}</td>
+    <td class="num">{{ "{:,}".format(r.tokens_saved) }}</td>
+    <td><a href="/doctor/{{ r.workflow }}">doctor</a> · <a href="/runs?workflow={{ r.workflow }}">runs</a></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="10" class="muted">No workflows yet. Record a run with <code>amber record</code>.</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Tokens per run</h2>
+{{ tokens_svg | safe }}
+<details><summary>table</summary>
+<table><tr><th>run</th><th class="num">agent baseline</th><th class="num">compiled llm</th></tr>
+{% for t in token_rows %}<tr><td>{{ t.label }}</td><td class="num">{{ "{:,}".format(t.agent) }}</td><td class="num">{{ "{:,}".format(t.compiled) }}</td></tr>{% endfor %}
+</table><p class="muted">baseline median {{ "{:,}".format(baseline) }} tokens</p></details>
+
+<h2>Guard events over time</h2>
+{{ guard_svg | safe }}
+<details><summary>table</summary>
+<table><tr><th>day</th><th class="num">soft</th><th class="num">hard</th></tr>
+{% for g in guard_rows %}<tr><td>{{ g.label }}</td><td class="num">{{ g.soft }}</td><td class="num">{{ g.hard }}</td></tr>{% endfor %}
+</table></details>
+{% endblock %}

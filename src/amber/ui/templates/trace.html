@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Trace {{ trace.id }}{% endblock %}
+{% block content %}
+<h1>Trace <span class="muted">{{ trace.id }}</span></h1>
+<p class="muted">{{ trace.workflow }} · {{ trace.adapter }} · {{ trace.origin }} · {{ trace.created_at }} · status {{ trace.outcome.status }}
+  · tokens in {{ "{:,}".format(trace.outcome.usage.input_tokens + trace.outcome.usage.cache_read_tokens + trace.outcome.usage.cache_creation_tokens) }} · out {{ "{:,}".format(trace.outcome.usage.output_tokens) }}</p>
+<p><strong>Task:</strong> {{ trace.task_prompt }}</p>
+<p><strong>Inputs:</strong> <code>{{ trace.inputs }}</code></p>
+<table>
+  <tr><th class="num">#</th><th>kind</th><th>tool / text</th><th>args</th><th>result</th></tr>
+  {% for e in trace.events %}
+  <tr>
+    <td class="num">{{ e.idx }}</td>
+    <td>{{ e.kind }}</td>
+    <td>{% if e.kind == "tool_call" %}<code>{{ e.tool }}</code>{% if e.is_error %} <span class="badge bad">error</span>{% endif %}{% else %}{{ e.text[:300] }}{% endif %}</td>
+    <td>{% if e.kind == "tool_call" %}<code>{{ e.args }}</code>{% endif %}</td>
+    <td>{% if e.kind == "tool_call" %}<code>{{ (e.result | string)[:300] }}</code>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

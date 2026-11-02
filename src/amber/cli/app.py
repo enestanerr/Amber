@@ -26,6 +26,7 @@ from amber.cli import (
     run_cmd,
     schedule_cmd,
     traces_cmd,
+    ui_cmd,
     verify_cmd,
 )
 from amber.cli._output import State, render_error
@@ -89,6 +90,7 @@ app.command("compile")(compile_cmd.compile_)
 app.command("verify")(verify_cmd.verify)
 app.command("run")(run_cmd.run)
 app.command("doctor")(doctor_cmd.doctor)
+app.command("ui")(ui_cmd.ui)
 app.add_typer(schedule_cmd.schedule_app, name="schedule")
 app.command("scheduler")(schedule_cmd.scheduler)
 app.add_typer(programs_cmd.programs_app, name="programs")

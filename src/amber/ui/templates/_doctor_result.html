@@ -1,0 +1,12 @@
+{% if error %}
+<p class="badge bad">error</p> <span>{{ error }}</span>
+{% elif diagnosis %}
+<p>Status: <span class="badge {{ 'ok' if diagnosis.status == 'healthy' else ('warn' if diagnosis.status == 'degraded' else 'bad') }}">{{ diagnosis.status }}</span>
+  · Recommendation: <strong>{{ diagnosis.recommendation }}</strong>{% if diagnosis.next_command() %} — <code>{{ diagnosis.next_command() }}</code>{% endif %}</p>
+<p class="muted">{{ diagnosis.rationale }}</p>
+<ul class="findings">
+  {% for f in diagnosis.findings %}
+  <li class="sev-{{ f.severity }}"><strong>{{ f.check }}</strong> — {{ f.detail }}</li>
+  {% endfor %}
+</ul>
+{% endif %}

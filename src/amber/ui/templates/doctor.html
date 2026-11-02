@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Doctor · {{ workflow }}{% endblock %}
+{% block content %}
+<h1>Doctor <span class="muted">{{ workflow }}</span></h1>
+<p class="muted">workflow:
+  {% for wf in workflows %}<a href="/doctor/{{ wf }}">{{ wf }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
+</p>
+<p>
+  <button hx-post="/doctor/{{ workflow }}" hx-target="#doctor-result" hx-swap="innerHTML" hx-indicator="#doctor-busy">Run doctor</button>
+  <button hx-post="/doctor/{{ workflow }}?probe=0" hx-target="#doctor-result" hx-swap="innerHTML" hx-indicator="#doctor-busy">Run doctor (no server probe)</button>
+  <span id="doctor-busy" class="htmx-indicator muted">running…</span>
+</p>
+<div id="doctor-result">
+  {% if diagnosis %}{% include "_doctor_result.html" %}{% else %}<p class="muted">No diagnosis yet for this session. Press <em>Run doctor</em>.</p>{% endif %}
+</div>
+{% endblock %}

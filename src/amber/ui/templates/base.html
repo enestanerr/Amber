@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}Amber{% endblock %} · Amber panel</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+<header class="top">
+  <span class="brand">amber</span>
+  <nav>
+    <a href="/" class="{{ 'active' if active == 'overview' else '' }}">Overview</a>
+    <a href="/programs" class="{{ 'active' if active == 'programs' else '' }}">Programs</a>
+    <a href="/runs" class="{{ 'active' if active == 'runs' else '' }}">Runs</a>
+    {% if workflows %}<a href="/doctor/{{ workflows[0] }}" class="{{ 'active' if active == 'doctor' else '' }}">Doctor</a>{% endif %}
+    <a href="/decisions" class="{{ 'active' if active == 'decisions' else '' }}">Decisions</a>
+  </nav>
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

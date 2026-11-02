@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Decisions{% endblock %}
+{% block content %}
+<h1>Decisions{% if workflow %} · {{ workflow }}{% endif %}</h1>
+<p class="muted">filter: <a href="/decisions">all</a>{% for wf in workflows %} · <a href="/decisions?workflow={{ wf }}">{{ wf }}</a>{% endfor %}</p>
+<table>
+  <tr><th>ts</th><th>workflow</th><th>run</th><th>proposal</th><th>vetoes</th><th>decision</th><th>reason</th><th>actor</th></tr>
+  {% for d in rows %}
+  <tr>
+    <td>{{ d.ts[:19] }}</td>
+    <td>{{ d.workflow }}</td>
+    <td><a href="/runs/{{ d.run_id }}">{{ d.run_id }}</a></td>
+    <td>{{ d.proposal.get("proposed_action", "") }} <span class="muted">step {{ d.proposal.get("step_idx", 0) + 1 }} {{ d.proposal.get("tool", "") }}</span></td>
+    <td>{% for v in d.vetoes %}<span class="badge warn">{{ v.rule }}</span> {% else %}<span class="muted">none</span>{% endfor %}</td>
+    <td><strong>{{ d.decision }}</strong></td>
+    <td>{{ d.reason }}</td>
+    <td>{{ d.actor }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="8" class="muted">No decisions yet (they are written when a run stops with <code>--fallback agent</code>).</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

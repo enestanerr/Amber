@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ workflow }} v{{ version }}{% endblock %}
+{% block head %}<style>{{ pygments_css }}</style>{% endblock %}
+{% block content %}
+<h1>{{ workflow }} <span class="muted">v{{ version }}</span>
+  {% if manifest and manifest.usable %}<span class="badge ok">usable</span>{% else %}<span class="badge warn">not usable</span>{% endif %}
+</h1>
+<p class="muted">{{ info.path }}</p>
+
+{% if manifest %}
+<h2>Steps</h2>
+<table>
+  <tr><th class="num">#</th><th>tool</th><th>kind</th><th>effect</th><th>flags</th></tr>
+  {% for s in manifest.steps %}
+  <tr><td class="num">{{ s.idx + 1 }}</td><td><code>{{ s.tool }}</code></td><td>{{ s.kind }}</td><td>{{ s.effect }}</td>
+      <td>{% if s.conditional %}conditional {% endif %}{% if s.observe %}observe{% endif %}</td></tr>
+  {% endfor %}
+</table>
+
+<div class="grid-2">
+  <div>
+    <h2>Judgment steps</h2>
+    <table><tr><th>id</th><th>kind</th><th>schema</th><th>context keys</th></tr>
+    {% for l in manifest.llm_steps %}<tr><td>{{ l.id }}</td><td>{{ l.kind }}</td><td><code>{{ l.schema_name }}</code></td><td>{{ l.context_keys | join(", ") }}</td></tr>
+    {% else %}<tr><td colspan="4" class="muted">none</td></tr>{% endfor %}</table>
+  </div>
+  <div>
+    <h2>Transforms</h2>
+    <table><tr><th>id</th><th>function</th><th>verified on</th></tr>
+    {% for t in manifest.transforms %}<tr><td>{{ t.id }}</td><td><code>{{ t.function }}</code></td><td>{{ t.verified_on | join(", ") }}{% if t.downgraded %} (downgraded){% endif %}</td></tr>
+    {% else %}<tr><td colspan="3" class="muted">none</td></tr>{% endfor %}</table>
+  </div>
+</div>
+
+<h2>Manifest</h2>
+<table>
+  <tr><th>source traces</th><td>{% for t in manifest.source_traces %}<a href="/traces/{{ t }}">{{ t }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td></tr>
+  <tr><th>tools</th><td>{% for t in manifest.tools %}<code>{{ t.canonical }}</code> ({{ t.effect }}){% if not loop.last %}, {% endif %}{% endfor %}</td></tr>
+  <tr><th>budgets</th><td>max calls {{ manifest.budgets.max_calls }} · llm tokens {{ manifest.budgets.max_llm_tokens }} · wall clock {{ manifest.budgets.wall_clock_s }} s</td></tr>
+  <tr><th>hashes</th><td>skeleton <code>{{ manifest.skeleton_hash }}</code> · program <code>{{ manifest.program_hash }}</code></td></tr>
+  <tr><th>warnings</th><td>{{ manifest.warnings | join("; ") if manifest.warnings else "none" }}</td></tr>
+</table>
+{% endif %}
+
+<h2>program.py</h2>
+<div class="highlight">{{ source_html | safe }}</div>
+
+<h2>REPORT.md</h2>
+<pre>{{ report }}</pre>
+{% endblock %}
