@@ -190,7 +190,8 @@ def week_data(week: str) -> dict[str, Any]:
         "post": (
             "mcp__slack__post_message",
             {"channel": "#eng", "text": summary},
-            {"ok": True, "ts": "1760864400.000100"},
+            # the Slack timestamp differs per run (volatile result path in the skeleton)
+            {"ok": True, "ts": f"{int(datetime.fromisoformat(end).timestamp()) + 32400}.000100"},
         ),
     }
 

@@ -64,6 +64,25 @@ def builtin_effect(name: str) -> Effect:
     return BUILTIN_EFFECTS.get(name, "unknown")
 
 
+_SCHEMA_NOISE = frozenset({"title", "description", "$schema", "examples"})
+
+
+def normalize_schema(schema: Any) -> Any:
+    """Strip presentation-only keys (``title``, ``description``, ``$schema``, ``examples``) and
+    empty ``required`` lists so two servers describing the same inputs hash the same."""
+    if isinstance(schema, dict):
+        d = cast(dict[str, Any], schema)
+        out: dict[str, Any] = {}
+        for key, value in d.items():
+            if key in _SCHEMA_NOISE or (key == "required" and value == []):
+                continue
+            out[key] = normalize_schema(value)
+        return out
+    if isinstance(schema, list):
+        return [normalize_schema(v) for v in cast(list[Any], schema)]
+    return schema
+
+
 def canonical_json(obj: Any) -> str:
     """Compact canonical JSON (sorted keys, no whitespace, ``-0.0 → 0.0``, NaN rejected)."""
     return dumps_compact(obj)
@@ -146,9 +165,15 @@ def normalize_result(result: Any, *, blob_sink: BlobSink | None = None) -> tuple
     if isinstance(result, bool | int | float):
         return result, "json"
 
-    structured = _block_field(result, "structuredContent", "structured_content")
+    structured: Any = _block_field(result, "structuredContent", "structured_content")
     if structured is not None:
-        return structured, "json"
+        # MCP servers wrap non-object return values as {"result": ...}; recordings made through
+        # an agent see the plain text form, so unwrap to keep live and recorded shapes equal.
+        if isinstance(structured, dict):
+            wrapped = cast(dict[str, Any], structured)
+            if set(wrapped) == {"result"}:
+                return wrapped["result"], "json"
+        return cast(Any, structured), "json"
 
     blocks: list[Any]
     if isinstance(result, list):

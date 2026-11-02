@@ -59,10 +59,10 @@ def test_duplicate_call_id_rejected() -> None:
         _trace(events=events)
 
 
-def test_wrong_hash_rejected() -> None:
-    bad = ToolSchema(server="shop", name="ping", hash="deadbeefdeadbeef")
-    with pytest.raises(ValidationError, match="hash deadbeefdeadbeef !="):
-        _trace(tools=[bad])
+def test_hash_is_always_recomputed() -> None:
+    stale = ToolSchema(server="shop", name="ping", hash="deadbeefdeadbeef")
+    assert stale.hash == digest({})  # a stored hash never wins over the schema
+    _trace(tools=[stale]).check()
 
 
 def test_check_is_callable_directly(t1: Trace) -> None:

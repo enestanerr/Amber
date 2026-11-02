@@ -35,8 +35,8 @@ from typing import Any, cast
 
 from amber.errors import AmberError
 from amber.trace.canonical import Effect, ResultKind, normalize_result
-from amber.trace.models import Outcome, Status, ToolCall, ToolSchema, Trace
-from amber.util.hashing import digest, sha256_hex
+from amber.trace.models import Outcome, Status, ToolCall, ToolSchema, Trace, schema_hash
+from amber.util.hashing import sha256_hex
 from amber.util.json import dumps_compact, loads, write_json
 from amber.util.logging import get_logger
 from amber.util.time import iso, new_id, utcnow
@@ -155,7 +155,7 @@ async def run_proxy(
             res = await client.list_tools()
             writer.write_tools(list(res.tools))
             for t in res.tools:
-                hashes[t.name] = digest(dict(t.input_schema or {}))
+                hashes[t.name] = schema_hash(dict(t.input_schema or {}))
             return res
 
         async def on_list_tools(

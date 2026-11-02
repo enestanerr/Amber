@@ -289,7 +289,7 @@
       "parent_call_id": null,
       "result": {
         "ok": true,
-        "ts": "1760864400.000100"
+        "ts": "1793512800.000100"
       },
       "result_kind": "json",
       "started_at": null,
@@ -402,7 +402,7 @@
     {
       "canonical": "shop.list_customers",
       "effect": "read",
-      "hash": "c8a1ac469a826ea3",
+      "hash": "efddc7bd8bbcef73",
       "input_schema": {
         "properties": {},
         "required": [],
@@ -503,7 +503,7 @@
     {
       "canonical": "slack.list_channels",
       "effect": "read",
-      "hash": "c8a1ac469a826ea3",
+      "hash": "efddc7bd8bbcef73",
       "input_schema": {
         "properties": {},
         "required": [],

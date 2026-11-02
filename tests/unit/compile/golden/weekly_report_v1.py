@@ -1,6 +1,6 @@
 """weekly-report v1 — compiled by amber from 3 recorded run(s).
 
-Skeleton hash ce0c186b05a8f1f2. Deterministic structure; the model only filled the typed holes
+Skeleton hash 54127fb9ffd32aa7. Deterministic structure; the model only filled the typed holes
 marked ``AMBER-HOLE``. Review before running live: this is ordinary Python.
 """
 

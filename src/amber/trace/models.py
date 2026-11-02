@@ -5,7 +5,8 @@ Invariants enforced by :meth:`Trace.check` (also run on validation):
 * ``events[i].idx == i``;
 * every ``ToolCall.tool`` has a matching ``ToolSchema.canonical`` in ``tools``;
 * ``call_id`` is unique within a trace;
-* ``ToolSchema.hash`` equals ``sha256(canonical(input_schema))[:16]``.
+* ``ToolSchema.hash`` equals ``sha256(canonical(normalize_schema(input_schema)))[:16]`` (always
+  recomputed on validation, so traces survive changes to the hashing rule).
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from amber.trace.canonical import Effect, ResultKind, canonical_tool_name
+from amber.trace.canonical import Effect, ResultKind, canonical_tool_name, normalize_schema
 from amber.util.hashing import digest
 
 AdapterName = Literal["claude-stream", "claude-transcript", "agent-sdk", "mcp-proxy"]
@@ -28,8 +29,9 @@ class TraceInvariantError(ValueError):
 
 
 def schema_hash(input_schema: dict[str, Any]) -> str:
-    """``sha256(canonical_json(input_schema))[:16]``."""
-    return digest(input_schema, length=16)
+    """``sha256(canonical_json(normalize_schema(input_schema)))[:16]`` — titles, descriptions
+    and empty ``required`` lists do not count, so cosmetic server differences do not drift."""
+    return digest(normalize_schema(input_schema), length=16)
 
 
 class _Model(BaseModel):
@@ -62,14 +64,13 @@ class ToolSchema(_Model):
     input_schema: dict[str, Any] = Field(default_factory=dict)
     output_schema: dict[str, Any] | None = None
     effect: Effect = "unknown"
-    hash: str = ""  # filled when empty; checked when given
+    hash: str = ""  # always derived from input_schema (a stored value is informational)
 
     @model_validator(mode="after")
     def _fill_derived(self) -> ToolSchema:
         if not self.canonical:
             self.canonical = canonical_tool_name(self.server, self.name)
-        if not self.hash:
-            self.hash = schema_hash(self.input_schema)
+        self.hash = schema_hash(self.input_schema)
         return self
 
 

@@ -17,5 +17,9 @@
       ],
       "rationale": "The recorded texts follow the same five-sentence structure built from the orders, top products and RFM snapshot that are available as context, so the prompt spells out that structure and names only the available context keys."
     }
-  ]
+  ],
+  "step4": {
+    "text": "Week 2026-W44 closed with 75 orders totalling $6,412.50. Brass Hurricane Lantern led revenue at $1,152.00 across 24 units. Compared with the snapshot as of 2026-10-25, two customers moved up a frequency band. Returning customers placed 41 of the orders. Full top-5 list and RFM table are in the shop dashboard.",
+    "confidence": 0.86
+  }
 }
