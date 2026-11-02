@@ -72,7 +72,7 @@ include = ["src/amber", "README.md", "LICENSE", "CHANGELOG.md", "pyproject.toml"
 line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
-extend-exclude = ["programs", "examples/*/programs", ".amber", "*.md", "docs", "tests/unit/compile/golden"]
+extend-exclude = ["programs", "examples/*/programs", ".amber", ".demo", "*.md", "docs", "tests/unit/compile/golden"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
@@ -86,6 +86,7 @@ known-first-party = ["amber"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011", "RUF029"]
+"scripts/demo.py" = ["E501"]  # the SVG template and the story lines are long by nature
 
 [tool.ruff.format]
 quote-style = "double"

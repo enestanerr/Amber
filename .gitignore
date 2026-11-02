@@ -49,3 +49,5 @@ Thumbs.db
 
 # --- Node (price-watch uses npx only) ---
 node_modules/
+# scripts/demo.py workspace (a copy of examples/weekly-report with live recordings)
+.demo/

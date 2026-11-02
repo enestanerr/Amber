@@ -12,17 +12,17 @@ from typing import Annotated, Any, NoReturn
 
 import typer
 from pydantic import BaseModel
-from rich.console import Console
 
 from amber.errors import AmberError
 from amber.util.json import dumps_canonical
+from amber.util.logging import make_console
 
 JsonOpt = Annotated[
     bool, typer.Option("--json", help="Machine-readable JSON on stdout (human output suppressed).")
 ]
 
-stdout = Console()
-stderr = Console(stderr=True)
+stdout = make_console()
+stderr = make_console(stderr=True)
 
 
 @dataclass

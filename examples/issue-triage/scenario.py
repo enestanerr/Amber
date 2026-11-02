@@ -122,7 +122,7 @@ def main(argv: list[str]) -> None:
     here = Path(__file__).resolve().parent
     if argv:
         marker = set_scenario(argv[0], here)
-        print(f"scenario {argv[0].upper()} written to {marker}")
+        print(f"scenario {argv[0].upper()} written to {marker.name}")
     data = issues()
     days = sorted({i["created_at"] for i in data})
     print(

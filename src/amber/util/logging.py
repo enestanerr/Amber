@@ -11,6 +11,16 @@ from rich.logging import RichHandler
 _CONFIGURED = False
 
 
+def make_console(*, stderr: bool = False) -> Console:
+    """A rich console that honours ``FORCE_COLOR`` on Windows pipes too.
+
+    With ``FORCE_COLOR`` set and output piped (CI logs, recordings), rich on Windows picks its
+    legacy Win32 renderer, which writes no escape codes at all; ANSI is what the user asked for.
+    """
+    legacy = False if os.environ.get("FORCE_COLOR") else None
+    return Console(stderr=stderr, legacy_windows=legacy)
+
+
 def setup_logging(level: str | None = None) -> None:
     """Configure the root ``amber`` logger once; later calls only adjust the level."""
     global _CONFIGURED
@@ -22,7 +32,7 @@ def setup_logging(level: str | None = None) -> None:
     logger.setLevel(numeric)
     if not _CONFIGURED:
         handler = RichHandler(
-            console=Console(stderr=True),
+            console=make_console(stderr=True),
             show_path=numeric <= logging.DEBUG,
             rich_tracebacks=False,
             markup=False,

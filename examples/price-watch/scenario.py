@@ -85,7 +85,7 @@ def write_site(scenario_name: str) -> Path:
 def main(argv: list[str]) -> None:
     if argv:
         marker = set_scenario(argv[0], HERE)
-        print(f"scenario {argv[0].upper()} written to {marker}")
+        print(f"scenario {argv[0].upper()} written to {marker.name}")
     name = scenario()
     path = write_site(name)
     changed = [
@@ -93,7 +93,8 @@ def main(argv: list[str]) -> None:
         for p in catalog(name)
         if p["price"] != next(q["price"] for q in PRODUCTS if q["sku"] == p["sku"])
     ]
-    print(f"scenario: {name} · wrote {path} · price changes vs previous: {changed or 'none'}")
+    where = path.relative_to(HERE).as_posix()
+    print(f"scenario: {name} · wrote {where} · price changes vs previous: {changed or 'none'}")
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ def main(argv: list[str]) -> None:
     here = Path(__file__).resolve().parent
     if argv:
         marker = set_scenario(argv[0], here)
-        print(f"scenario {argv[0].upper()} written to {marker}")
+        print(f"scenario {argv[0].upper()} written to {marker.name}")
     print(
         f"scenario: {scenario()} · orders: {len(synth.orders())} · "
         f"customers: {len(synth.customers())} · digest: {synth.digest()}"
