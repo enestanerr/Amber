@@ -22,7 +22,7 @@ control back to the agent and recompiles.
 | P4 Compile — codegen, typed holes + synthesizer, sandbox/lint, versions, `amber compile`, `amber programs` | done |
 | P5 Verify — cassette replay, `amber verify`, compile marks usable only after 3/3 replay | done |
 | P6 Run — live MCP backend, builtins, guards, ledger, `amber run` (0 agent turns), scheduler | done |
-| P8 Examples — weekly-report servers + `make demo-offline` | partial |
+| P8 Examples — weekly-report, issue-triage, price-watch (mock servers, scenarios, Makefiles); live demos need `claude` | done offline |
 | P7 Doctor + fallback — `amber doctor` (exit 5), `amber run --fallback agent`, recompile with resumed traces | done |
 | P9, P10 | not started |
 

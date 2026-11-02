@@ -503,3 +503,28 @@ and `verify`) is wired (`make heal`) but was not run here: it needs a logged-in 
 spends tokens. The PLAN's price-watch variant of this story needs the P8 price-watch example.
 
 Full suite: 279 passed, 1 skipped. ruff + pyright clean.
+
+## 2026-11-02 — P8 Examples (offline parts)
+
+**Built**
+
+- `examples/issue-triage/`: `server_github.py` (`list_issues`, `get_issue`, `search_issues`,
+  `add_labels` [write], `add_comment` [write]; scenario B switches `area:*` → `kind/*` and
+  rejects unknown labels), `scenario.py` (40 seeded issues over 10 days, 6 areas, 4 duplicate
+  pairs), `amber.toml`, `mcp.json`, `task.md`, `Makefile` (record with `since=2026-10-27|28|29`).
+- `examples/price-watch/`: `scenario.py` writes `site/index.html` (six fictional lanterns with
+  `.price`/`.stock` spans; scenario B changes three prices, one stock and renames `.price` →
+  `.cost`) and `site/previous.json`; `amber.toml` / `mcp.json` use `npx -y @playwright/mcp@latest
+  --headless` (Node ≥ 18) plus the shared Slack mock as `alerts`; `Makefile` with `serve`,
+  `record`, `drift`, `heal`, `demo`.
+- `examples/README.md` documents what each example demonstrates and the expected output.
+- Tests (`tests/unit/examples`): generators deterministic by seed, `list_tools` goldens for
+  shop / slack / github, scenario B behaviour (shop `amount`, github label rejection, price-watch
+  `.cost`), outbox.
+
+**Not run (live)**: `make demo` for issue-triage and price-watch (3 `claude -p` recordings each)
+and `make demo && make drift && make heal` for price-watch need a logged-in `claude` CLI (and Node
+for Playwright). weekly-report's `make demo-offline` covers the compile → verify → run path
+offline; its live `make demo` is wired the same way.
+
+Full suite: 282 passed, 1 skipped. ruff + pyright clean.

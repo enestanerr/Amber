@@ -413,7 +413,7 @@ uv run amber compile price-watch --refresh && uv run amber verify price-watch   
 **Tasks**
 - [x] `examples/_shared/`: `synth.py` (seeded Faker-free generators: names from word lists,
       deterministic ids), `outbox.py` (Slack-mock outbox writer), `mcp_common.py`.
-- [ ] `examples/issue-triage/`: `server_github.py` (tools: `list_issues(state, since)`,
+- [x] `examples/issue-triage/`: `server_github.py` (tools: `list_issues(state, since)`,
       `get_issue(number)`, `add_labels(number, labels)` [write], `search_issues(query)`),
       `server_slack.py` (`post_message(channel, text)` [write], `list_channels()`), `scenario.py`
       (seed → 40 issues across areas; scenario B adds a new label taxonomy), `task.md`,
@@ -423,13 +423,13 @@ uv run amber compile price-watch --refresh && uv run amber verify price-watch   
       until, n)`), `server_slack.py` (shared), `scenario.py` (seed, 12 weeks of orders; scenario
       B renames `total` → `amount` to cause result-shape drift), `task.md`, `mcp.json`,
       `Makefile`.
-- [ ] `examples/price-watch/`: `site/` static HTML catalog (6 fictional products) served by
+- [x] `examples/price-watch/`: `site/` static HTML catalog (6 fictional products) served by
       `python -m http.server` via Makefile; `mcp.json` uses `@playwright/mcp` (`npx -y
       @playwright/mcp@latest`) — document the Node requirement; `scenario.py` writes scenario A
       or B (B changes prices and renames the price CSS class → drift); `task.md`, `Makefile`.
-- [ ] Each example Makefile: `record` (3 runs with different inputs), `align`, `compile`,
+- [x] Each example Makefile: `record` (3 runs with different inputs), `align`, `compile`,
       `verify`, `run`, `drift`, `demo` (all of the above), `clean`.
-- [ ] Top-level `make demo` = `examples/weekly-report` demo; `make drift` = price-watch drift
+- [x] Top-level `make demo` = `examples/weekly-report` demo; `make drift` = price-watch drift
       story.
 - [x] `examples/README.md` with what each example demonstrates and expected outputs.
 
