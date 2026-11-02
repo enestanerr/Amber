@@ -36,6 +36,17 @@ created: 2026-11-02
 | 10 | [Research notes and related work](10-research.md) | P10 |
 | 11 | [Decisions (ADR-style)](11-decisions.md) | P0 |
 
+## User docs
+
+| note | what it is |
+|---|---|
+| [Quickstart](user/quickstart.md) | the 6-command story with expected output |
+| [Concepts](user/concepts.md) | traces, skeletons, holes, programs, guards, doctor, fallback |
+| [CLI reference](user/cli.md) | every command and flag (generated from the typer app) |
+| [Adapters](user/adapters.md) | recording from Claude Code, transcripts, the Agent SDK, any MCP harness |
+| [Writing MCP servers Amber can compile](user/servers.md) | annotations, shapes, scenarios |
+| [FAQ](user/faq.md) | cache? API key? side effects? editing program.py? |
+
 ## Pipeline at a glance
 
 ```
