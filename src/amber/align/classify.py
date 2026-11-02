@@ -133,8 +133,6 @@ def _separating_op(present: list[Any], absent: list[Any]) -> tuple[Any, Any] | N
     a_keys = {leaf_key(v) for v in absent}
     if len(p_keys) == 1 and not (p_keys & a_keys):
         return "==", present[0]
-    if len(a_keys) == 1 and not (p_keys & a_keys):
-        return "!=", absent[0]
     nums_p = [v for v in present if isinstance(v, int | float) and not isinstance(v, bool)]
     nums_a = [v for v in absent if isinstance(v, int | float) and not isinstance(v, bool)]
     if len(nums_p) == len(present) and len(nums_a) == len(absent) and nums_p and nums_a:
@@ -142,6 +140,8 @@ def _separating_op(present: list[Any], absent: list[Any]) -> tuple[Any, Any] | N
             return ">", max(nums_a)
         if max(nums_p) < min(nums_a):
             return "<", min(nums_a)
+    if len(a_keys) == 1 and not (p_keys & a_keys):
+        return "!=", absent[0]
     return None
 
 
