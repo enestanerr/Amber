@@ -425,7 +425,10 @@ def verify_judgment(
         report.details.append(f"prompt is {len(prompt)} chars (max {PROMPT_MAX_CHARS})")
     if not prompt.strip():
         report.details.append("prompt is empty")
-    unknown_keys = _referenced_keys(prompt) - set(hole.context_keys)
+    # the declared inputs are reachable as `inputs.<name>`; a prompt that names one (`product`)
+    # refers to available data (a live compile lost a repair round to this)
+    input_names = {k for ex in hole.examples for k in (ex.context.get("inputs") or {})}
+    unknown_keys = _referenced_keys(prompt) - set(hole.context_keys) - input_names
     if unknown_keys:
         report.details.append(f"prompt references unavailable context keys {sorted(unknown_keys)}")
     for term in forbidden_terms:

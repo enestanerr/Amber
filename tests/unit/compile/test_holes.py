@@ -210,3 +210,15 @@ def test_gate_verifies_although_reason_is_never_recorded() -> None:
     ]
     report = verify_judgment(gate, "Did a price in `r1` change versus `r3`?", fields)
     assert report.ok, report.details
+
+
+def test_prompt_may_name_a_declared_input() -> None:
+    hole = _judgment()
+    hole.examples = [
+        HoleExample(
+            "t0", context={"inputs": {"product": "all"}, "r0": {}}, expected={"label": "bug"}
+        ),
+    ]
+    fields = [FieldSpec(name="label", type="str", description="d")]
+    assert verify_judgment(hole, "Filter by `product`, then label from `r0`.", fields).ok
+    assert not verify_judgment(hole, "Filter by `sku`.", fields).ok
