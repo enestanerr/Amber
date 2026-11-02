@@ -1,46 +1,192 @@
 # Amber — compile your agent's runs into programs
 
-> **Under construction.** Amber is being built phase by phase from [PLAN.md](PLAN.md); this
-> README only lists what exists and has a test. See [PROGRESS.md](PROGRESS.md) for the log.
+**Record an agent doing a workflow a few times; get a Python program that does it for a fraction
+of the tokens, with replay tests, guards, a doctor for drift and a fallback to the agent.**
 
-Amber is an open-source **compiler for agent runs**. You record an AI agent doing a workflow a
-few times (Claude Code, the Claude Agent SDK, or any MCP-speaking harness), and Amber compiles
-those runs into a **neuro-symbolic program**: deterministic Python for the parts that are
-mechanical, small schema-validated `llm()` calls for the parts that need judgment, plus
-**replay tests** generated from the recordings. The program then runs on a schedule at a
-fraction of the tokens, with guards, a `doctor` that detects drift, and a fallback that hands
-control back to the agent and recompiles.
+[![ci](https://github.com/enestanerr/Amber/actions/workflows/ci.yml/badge.svg)](https://github.com/enestanerr/Amber/actions/workflows/ci.yml)
+![python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)
+![license](https://img.shields.io/badge/license-Apache--2.0-green)
+![status](https://img.shields.io/badge/status-0.1.0a0%20pre--release-orange)
 
-## Status
+> Demo GIF: `scripts/demo_gif.sh` records it with [vhs](https://github.com/charmbracelet/vhs)
+> once you have the `claude` CLI logged in (`docs/assets/demo.gif`, not yet generated).
 
-| phase | state |
-|---|---|
-| P0 Bootstrap — packaging, CLI skeleton (`--version`, `init`), lint/type/test/CI | done |
-| P1 Trace model + store — `Trace` models, canonicalization, JSON+SQLite store, `amber traces` | done |
-| P2 Recorders — `amber record` (claude -p stream-json, `--from-stdin`, `--sdk`), `amber import` (transcripts, proxy fragments), `amber proxy` | done |
-| P3 Align — sequence alignment, provenance, classification, pruning, `amber align --show` | done |
-| P4 Compile — codegen, typed holes + synthesizer, sandbox/lint, versions, `amber compile`, `amber programs` | done |
-| P5 Verify — cassette replay, `amber verify`, compile marks usable only after 3/3 replay | done |
-| P6 Run — live MCP backend, builtins, guards, ledger, `amber run` (0 agent turns), scheduler | done |
-| P8 Examples — weekly-report, issue-triage, price-watch (mock servers, scenarios, Makefiles); live demos need `claude` | done offline |
-| P7 Doctor + fallback — `amber doctor` (exit 5), `amber run --fallback agent`, recompile with resumed traces | done |
-| P9 Web panel — `amber ui` (FastAPI + htmx, SVG charts, JSON API) | done |
-| P10 Bench, README, GIF, release | in progress |
+## Why
 
-## Install (development)
+- Agents are great at *figuring out* a workflow and terrible at *repeating* it: every run
+  re-spends thousands of tokens re-deriving the same tool calls, nondeterministically.
+- The idea is proven: FlashScript ([arXiv 2610.33876](https://arxiv.org/abs/2610.33876), Oct 2026)
+  compiled agent trajectories into neuro-symbolic programs that reproduced the agent's tool calls
+  with ~70× fewer input tokens and ~1/3 the runtime, and stayed correct where a skill-guided agent
+  degraded. No code was released.
+- Amber is an open, harness-agnostic implementation with what production needs around it:
+  replay tests generated from the recordings, guards on every live call, a doctor that detects
+  drift, and a fallback that hands the task back to the agent and recompiles.
+
+Caches replay the past; skills instruct the agent; Amber compiles what the agent learned into a
+program you can read, test and run — and hands control back to the agent only when the world
+changes.
+
+## Install
 
 ```bash
-git clone https://github.com/enestanerr/Amber && cd Amber
-uv sync --all-extras
-uv run amber --version      # amber 0.1.0a0
-uv run amber init           # creates .amber/ and amber.toml
+uv tool install amber-compiler        # (first PyPI release pending) — or from a checkout:
+git clone https://github.com/enestanerr/Amber && cd Amber && uv sync --all-extras
+uv run amber --version                # amber 0.1.0a0
 ```
+
+Needs Python 3.12+, and for compile / live runs either a logged-in `claude` CLI or
+`ANTHROPIC_API_KEY`. The price-watch example also needs Node ≥ 18 (`@playwright/mcp`).
+
+## The 60-second story (6 commands)
+
+```bash
+cd examples/weekly-report
+amber record weekly-report --input week=2026-W44 --mcp mcp.json --allow 'mcp__shop__*' --allow 'mcp__slack__*' \
+  -- claude -p "$(sed 's/{week}/2026-W44/' task.md)"      # ×3 with different weeks
+amber align weekly-report --show       # the skeleton: steps, provenance, judgment vs deterministic
+amber compile weekly-report            # program.py + manifest + replay tests; verify 3/3 → usable
+amber verify weekly-report             # replay every recording (exit 3 on divergence)
+amber run weekly-report --input week=2026-W45 --allow-writes   # live, 0 agent turns, 1 llm() call
+amber doctor weekly-report             # drift report + recommendation (exit 5 unless healthy)
+```
+
+Expected output for every step is in [docs/user/quickstart.md](docs/user/quickstart.md).
+No `claude` at hand? `make demo-offline` runs the same pipeline on the synthetic fixture
+recordings with recorded model fills.
+
+## How it works
+
+```mermaid
+flowchart LR
+  R[record<br/>claude -p · transcripts · Agent SDK · MCP proxy] --> T[(traces)]
+  T --> A[align<br/>sequence alignment · provenance · classify · prune]
+  A --> C[compile<br/>deterministic codegen · typed holes filled by the model]
+  C --> V[verify<br/>cassette replay of every recording]
+  V --> P[(programs/vN<br/>program.py · manifest · tests · REPORT)]
+  P --> X[run<br/>guards · ledger · llm() for judgment only]
+  X --> D[doctor<br/>schema & shape drift · stats]
+  D -->|fallback| F[agent resumes from the failed step]
+  F -->|new trace| A
+```
+
+1. **record** — adapters turn Claude Code stream-json, Claude Code transcripts, Agent SDK
+   messages or any MCP client (through `amber proxy`) into one canonical trace format.
+2. **align** — several runs become a skeleton: each argument gets a provenance
+   (`Input`, `Ref` to an earlier result, `Template`, `Const`, or `Unknown`), each step a kind.
+3. **compile** — the structure is generated by code; the model only fills typed holes
+   (transform functions, judgment prompts + schemas), and every fill is checked against the
+   recordings with a bounded repair loop. A transform the model cannot write becomes a judgment.
+4. **verify** — a cassette backend replays each recording; every call must match in order.
+   A program that fails replay is not a program.
+5. **run** — live MCP calls with a tool allowlist, budgets, result-shape checks, write-effect
+   dry-run by default, and small schema-validated `llm()` calls for the judgment steps.
+6. **doctor / fallback** — drift is detected (schema hashes, result shapes, guard statistics),
+   diagnosed, and if needed the agent resumes from the failed step; `compile --refresh` folds the
+   new run in.
+
+The principle throughout: **deterministic compiler, typed holes.**
+
+## What comes out
+
+`programs/weekly-report/v1/program.py` (trimmed; the full golden is in
+[tests/unit/compile/golden](tests/unit/compile/golden/weekly_report_v1.py)):
+
+```python
+class Inputs(BaseModel):
+    week: str = Field(description="Declared input", examples=["2026-W42", "2026-W43", "2026-W44"])
+
+# AMBER-HOLE:transform_step3 — transform for shop.rfm_snapshot (as_of)
+def transform_step3(inputs: dict, r0, r1, r2) -> dict:
+    start = date.fromisoformat(r0["start"])
+    return {"as_of": (start - timedelta(days=1)).isoformat()}
+
+# AMBER-HOLE:judgment_step4 — judgment for slack.post_message (text)
+class Step4Out(BaseModel):
+    text: str = Field(description="The five-sentence summary to post.")
+    confidence: float = Field(ge=0, le=1)
+
+@program(workflow="weekly-report", version=1)
+def run(inputs: Inputs, ctx: Context) -> Output:
+    r0 = ctx.tool("shop.week_range", week=inputs.week)  # step 1
+    r1 = ctx.tool("shop.list_orders", since=r0["start"], until=r0["end"])  # step 2
+    r2 = ctx.tool("shop.top_products", n=5, since=r0["start"], until=r0["end"])  # step 3
+    t3 = transform_step3(inputs, r0, r1, r2)  # transform hole
+    r3 = ctx.tool("shop.rfm_snapshot", as_of=t3["as_of"])  # step 4
+    s4 = ctx.llm("step4", Step4Out, PROMPT_step4, context={...})  # judgment
+    r4 = ctx.tool("slack.post_message", channel="#eng", text=s4.text)  # step 5  # effect: write
+    return Output(ok=r4["ok"], ts=r4["ts"], text=s4.text)
+```
+
+`REPORT.md` lists the skeleton, every hole fill with its rationale, the verify table and a
+"review before live" note.
+
+## Measured
+
+No live measurement yet. [bench/results.md](bench/results.md) holds the protocol run in
+**offline mode**: the agent baseline is the synthetic fixture recordings, the compiled program
+ran against the mock servers with the recorded model backend, and its llm-token column is a
+prompt-length estimate rather than model usage. The table demonstrates the protocol, not a
+savings claim. `uv run python bench/run_bench.py --all --runs 3` with the `claude` CLI logged in
+replaces it with measured numbers.
+
+| example | agent input tok (median) | compiled llm tok (median) | ratio | agent wall s | compiled wall s | fidelity | agent turns |
+|---|---|---|---|---|---|---|---|
+| weekly-report | 18,085 (18,085-18,122) | 1,669 (1,626-1,691) | 10.8x | 19.2 | 2.1 | 100% | 0 |
+
+Research numbers (FlashScript's ~70×) are the paper's, not ours.
+
+## Supported inputs
+
+Claude Code (`claude -p`), Claude Code transcripts (`amber import --latest`), the Claude Agent
+SDK (`--sdk`), and any MCP client through `amber proxy` + `amber import --proxy`.
+Roadmap: OpenAI Agents SDK, OpenTelemetry GenAI spans.
+
+## What it can't do yet
+
+- Loops and pagination are not collapsed (repeated calls stay separate steps; a warning says so).
+- No parallel steps; no multi-agent traces (sidechains are skipped).
+- Only a safe subset of Claude Code builtins (`Read`, `Write`, `Glob`, `Grep`, `WebFetch`, a
+  template-locked `Bash`); others are a compile-time error.
+- No hosted runner, no approval UI for writes (dry-run by default, `--allow-writes` to execute).
+- TypeScript program output is a roadmap item; programs are Python only.
+- Windows is best effort (the test suite passes; the plan's acceptance targets macOS/Linux).
+- Judgment calls routed through the `claude` CLI backend carry the CLI's own system prompt
+  (about 30k input tokens per call in our runs), which trips the examples' llm-token budget; use
+  `ANTHROPIC_API_KEY` for cheap `llm()` steps at run time.
+- The demo GIF and live benchmark numbers are produced by the maintainer with the `claude` CLI.
+
+## Related work
+
+- [muscle-mem](https://github.com/pig-dot-dev/muscle-mem) — a behaviour cache that replays one
+  recorded path when environment checks pass; Amber compiles *several* runs into a parameterised
+  program with typed `llm()` steps, replay tests and a drift loop, without instrumenting your agent.
+- [FlashScript](https://arxiv.org/abs/2610.33876) — the research result Amber implements in the
+  open, with adapters and an operating loop.
+- taprun — records browser workflows and replays them (closed, browser-only); Amber works on any
+  MCP tool and emits code you own.
+- Codex "Record and Replay" — drafts a SKILL.md from a session; Amber emits an executable program
+  with tests and guards.
+- Claude Code skills / hooks — complementary: a skill tells the agent how; Amber removes the agent
+  from the loop for the repeatable part.
+- VCR-style cassette libraries — the same idea applied to MCP tool calls, plus volatility masking
+  and `llm()` recording.
+
+## FAQ
+
+See [docs/user/faq.md](docs/user/faq.md): is this a cache? does it need an API key? what about
+side effects? can I edit `program.py`? what models run at run time? does it send my data anywhere?
 
 ## Documentation
 
-The `docs/` folder is the specification and doubles as an Obsidian vault: open the repository
-root in Obsidian and start at [docs/index.md](docs/index.md).
+`docs/` is the specification and doubles as an Obsidian vault (open the repository root or
+`docs/` as a vault; start at [docs/index.md](docs/index.md)). User docs:
+[quickstart](docs/user/quickstart.md) · [concepts](docs/user/concepts.md) ·
+[CLI reference](docs/user/cli.md) · [adapters](docs/user/adapters.md) ·
+[writing MCP servers](docs/user/servers.md) · [FAQ](docs/user/faq.md).
+Build log: [PROGRESS.md](PROGRESS.md) · plan: [PLAN.md](PLAN.md).
 
-## License
+## Contributing · License
 
-Apache-2.0 — see [LICENSE](LICENSE).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Synthetic data only, specs win, tests are part of the
+task. Apache-2.0 — see [LICENSE](LICENSE).

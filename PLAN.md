@@ -472,16 +472,16 @@ uv run amber ui --port 8787 & sleep 2 && curl -s localhost:8787/ | grep -q "Prog
 **Read:** `docs/09-launch.md`, `docs/10-research.md`.
 
 **Tasks**
-- [ ] `bench/run_bench.py`: for each example, N agent runs (tokens from `result.usage`: input +
+- [x] `bench/run_bench.py`: for each example, N agent runs (tokens from `result.usage`: input +
       cache_read + cache_creation, output; cost; wall time) vs N compiled runs (llm tokens,
       wall time, identical-tool-call rate vs recordings) → `bench/results.json`,
       `bench/results.md` (median, min, max, model IDs, date, commit).
-- [ ] `README.md` per the skeleton in `09-launch.md`: hero line, GIF, install, 6-command
+- [x] `README.md` per the skeleton in `09-launch.md`: hero line, GIF, install, 6-command
       story, how it works (mermaid), measured table, what it can't do yet, related work, FAQ,
       contributing, license.
 - [ ] `scripts/demo_gif.sh`: `vhs` tape (or `asciinema` + `agg`) recording `make demo`
       trimmed to ≤ 60 s; output `docs/assets/demo.gif` ≤ 8 MB.
-- [ ] Docs site pages (`docs/user/`): quickstart, concepts, CLI reference (generated from typer
+- [x] Docs site pages (`docs/user/`): quickstart, concepts, CLI reference (generated from typer
       with `typer utils docs`), adapters, writing MCP servers Amber can compile, FAQ.
 - [ ] `CHANGELOG.md` v0.1.0; version bump; tag `v0.1.0`; TestPyPI dry run then PyPI via
       `release.yml`; GitHub Release with the GIF and bench table.

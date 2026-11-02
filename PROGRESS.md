@@ -565,3 +565,56 @@ api/overview: [{"agent_median_tokens": 18085, "latest_version": 1, "runs_7d": 0,
 ```
 
 Full suite: 296 passed, 1 skipped. ruff + pyright clean.
+
+## 2026-11-02 — P10 Bench, README, docs, release prep
+
+**Decisions**: D1 default kept (Amber / `amber-compiler` / import `amber` / CLI `amber`; the
+GitHub repository already carries the name). Release artefacts (tag, PyPI, GIF) are left to the
+maintainer: they need a logged-in `claude` CLI, `vhs`, and the PyPI trusted publisher.
+
+**Built**
+
+- `bench/run_bench.py` (+ `amber bench` wrapper, `make bench`): the protocol from
+  `docs/09-launch.md` — N `amber record` runs (input + cache_read + cache_creation tokens, output
+  tokens, cost, wall, turns) vs N `amber run --allow-writes` runs (llm tokens, wall, calls, agent
+  turns, tool-call fidelity vs the recording for the same input) → `bench/results.json` and
+  `bench/results.md` (medians, min/max, model ids, date, commit, command, mode). `--offline`
+  takes the existing recordings as the baseline and runs the compiled program with the recorded
+  model backend, so no model is called.
+- `README.md` per the `09-launch.md` skeleton: hero, badges, why, install, 6-command story,
+  mermaid pipeline, what comes out, measured table (offline-labelled), supported inputs, what it
+  can't do yet, related work, FAQ pointer, docs map, contributing/license.
+- `docs/user/`: quickstart, concepts, cli (generated with `typer src/amber/cli/app.py utils docs`),
+  adapters, servers, faq; linked from `docs/index.md`.
+- `scripts/demo.tape` + `scripts/demo_gif.sh` (vhs; the GIF itself is not recorded yet).
+- `make demo-offline` at the repository root (delegates to the example).
+
+**Finding**: the first offline bench run went through the `auto` model backend, which picked the
+logged-in `claude` CLI for the judgment step; every call carried ~32k input tokens (the CLI's own
+system prompt), tripped the example's `max_llm_tokens = 20000` guard and the runs ended
+`stopped (budget: llm token budget exceeded)`. Three such runs were made before the script was
+changed to force the recorded backend in `--offline` mode. Documented in `bench/README.md`, the
+FAQ and the README limitations.
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run python bench/run_bench.py --example weekly-report --runs 3 --offline && test -s bench/results.md
+weekly-report: agent median 18,085 tok, compiled median 1,669 tok
+wrote bench/results.md          # OFFLINE mode; `--all --runs 3` (live) needs the claude CLI
+
+$ uv build && uv run twine check dist/*
+Successfully built dist/amber_compiler-0.1.0a0.tar.gz
+Successfully built dist/amber_compiler-0.1.0a0-py3-none-any.whl
+Checking dist/amber_compiler-0.1.0a0-py3-none-any.whl: PASSED
+Checking dist/amber_compiler-0.1.0a0.tar.gz: PASSED
+
+$ uvx --from ./dist/amber_compiler-0.1.0a0-py3-none-any.whl amber --version
+amber 0.1.0a0
+```
+
+Full suite: 296 passed, 1 skipped. ruff + pyright clean.
+
+**Deferred (need the maintainer)**: live `make demo`, live bench for all three examples
+(`--all --runs 3`), `docs/assets/demo.gif`, CHANGELOG v0.1.0 + version bump + tag + TestPyPI/PyPI
+via `release.yml`, post-release `uvx --from amber-compiler amber --version` on a clean machine.

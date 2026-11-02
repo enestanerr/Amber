@@ -8,6 +8,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Launch prep (P10): `bench/run_bench.py` + `amber bench` + `make bench` (agent baseline vs
+  compiled runs; `--offline` runs the protocol on the existing recordings with the recorded
+  model backend), README per the launch skeleton, user docs under `docs/user/` (quickstart,
+  concepts, generated CLI reference, adapters, writing MCP servers, FAQ), `scripts/demo.tape` +
+  `scripts/demo_gif.sh`, root `make demo-offline`.
 - Web panel (P9): `amber ui` — overview with token-savings tiles and charts, programs and
   versions (highlighted program.py, manifest, REPORT), runs with step timelines, doctor
   (run from the page), decisions ledger, trace viewer, JSON API twins.
