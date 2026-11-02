@@ -407,10 +407,12 @@ def body_lines(
                 cond = predicate_expr(step.predicate)
         transform = hb.get(step.idx, "transform")
         if transform is not None:
-            inner.append(
-                f"t{step.idx} = {transform.function_name}({', '.join(transform.params)})"
-                "  # transform hole"
+            # transforms are verified against the recordings with ``inputs`` as a plain dict
+            # (``trace.inputs``), so they must be called with one too
+            call_args = ", ".join(
+                "inputs.model_dump()" if p == "inputs" else p for p in transform.params
             )
+            inner.append(f"t{step.idx} = {transform.function_name}({call_args})  # transform hole")
         judgment = hb.get(step.idx, "judgment")
         if judgment is not None:
             inner.append(

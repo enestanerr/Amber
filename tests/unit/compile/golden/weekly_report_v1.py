@@ -55,7 +55,7 @@ def run(inputs: Inputs, ctx: Context) -> Output:
     r0 = ctx.tool("shop.week_range", week=inputs.week)  # step 1
     r1 = ctx.tool("shop.list_orders", since=r0["start"], until=r0["end"])  # step 2
     r2 = ctx.tool("shop.top_products", n=5, since=r0["start"], until=r0["end"])  # step 3
-    t3 = transform_step3(inputs, r0, r1, r2)  # transform hole
+    t3 = transform_step3(inputs.model_dump(), r0, r1, r2)  # transform hole
     r3 = ctx.tool("shop.rfm_snapshot", as_of=t3["as_of"])  # step 4
     s4 = ctx.llm("step4", Step4Out, PROMPT_step4, context={"inputs": inputs.model_dump(), "r0": r0, "r1": r1, "r2": r2, "r3": r3})  # judgment
     r4 = ctx.tool("slack.post_message", channel="#eng", text=s4.text)  # step 5  # effect: write

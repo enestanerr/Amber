@@ -50,9 +50,9 @@ def test_golden_program(
         'r1 = ctx.tool("shop.list_orders", since=r0["start"], until=r0["end"])  # step 2'
         in gen.source
     )
-    assert (
-        "# effect: write" in gen.source and "t3 = transform_step3(inputs, r0, r1, r2)" in gen.source
-    )
+    # transforms get ``inputs`` as the dict they were verified with, not the Pydantic model
+    assert "# effect: write" in gen.source
+    assert "t3 = transform_step3(inputs.model_dump(), r0, r1, r2)" in gen.source
     llm_line = next(line for line in gen.source.splitlines() if "s4 = ctx.llm(" in line)
     assert llm_line.strip().startswith('s4 = ctx.llm("step4", Step4Out, PROMPT_step4, context={')
     assert '"inputs": inputs.model_dump(), "r0": r0, "r1": r1, "r2": r2, "r3": r3' in llm_line
