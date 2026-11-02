@@ -156,3 +156,32 @@ async def test_anthropic_backend_with_fake_client() -> None:
 
     with pytest.raises(ModelError, match="no structured output"):
         await AnthropicBackend(EmptyClient()).complete(Out, "sys", "user", model="m", max_tokens=5)
+
+
+def test_cli_effort_low_for_short_answers(monkeypatch: pytest.MonkeyPatch) -> None:
+    from amber.models.claude_cli import EFFORT_ENV, effort_for
+
+    monkeypatch.delenv(EFFORT_ENV, raising=False)
+    assert effort_for(1200) == "low"  # judgments
+    assert effort_for(4000) is None  # synthesis keeps the CLI default
+    monkeypatch.setenv(EFFORT_ENV, "medium")
+    assert effort_for(1200) == "medium"
+    monkeypatch.setenv(EFFORT_ENV, "default")
+    assert effort_for(1200) is None
+
+
+async def test_cli_backend_passes_effort(monkeypatch: pytest.MonkeyPatch) -> None:
+    from amber.models.claude_cli import EFFORT_ENV
+
+    monkeypatch.delenv(EFFORT_ENV, raising=False)
+    backend = ClaudeCliBackend()
+    seen: list[list[str]] = []
+
+    async def fake_run(argv: list[str], stdin: str = "") -> dict[str, Any]:
+        seen.append(argv)
+        return {"structured_output": {"text": "ok"}}
+
+    monkeypatch.setattr(backend, "_run", fake_run)
+    await backend.complete(Out, "sys", "user", model="m", max_tokens=1200)
+    await backend.complete(Out, "sys", "user", model="m", max_tokens=4000)
+    assert seen[0][seen[0].index("--effort") + 1] == "low" and "--effort" not in seen[1]

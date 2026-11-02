@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 import shutil
 import tempfile
@@ -39,6 +40,21 @@ def extract_candidate(payload: dict[str, Any]) -> Any:
             except ValueError:
                 return None
     return None
+
+
+EFFORT_ENV = "AMBER_CLI_EFFORT"
+LOW_EFFORT_MAX_TOKENS = 2000
+
+
+def effort_for(max_tokens: int) -> str | None:
+    """``--effort`` for a call. The CLI has no output cap and thinks at length by default (a
+    weekly-report judgment produced 9.9k output tokens, 6.4k at ``low`` with the same correct
+    counts), so short structured answers (``max_tokens`` <= 2000: judgments) run at ``low``.
+    ``AMBER_CLI_EFFORT`` overrides (``default`` leaves the flag out)."""
+    env = os.environ.get(EFFORT_ENV, "").strip()
+    if env:
+        return None if env == "default" else env
+    return "low" if max_tokens <= LOW_EFFORT_MAX_TOKENS else None
 
 
 class ClaudeCliBackend:
@@ -107,6 +123,9 @@ class ClaudeCliBackend:
             "--exclude-dynamic-system-prompt-sections",
             "--no-session-persistence",
         ]
+        effort = effort_for(max_tokens)
+        if effort:
+            argv += ["--effort", effort]
         last_error = ""
         try:
             for _attempt in range(2):
