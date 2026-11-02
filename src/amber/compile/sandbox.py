@@ -21,6 +21,16 @@ from amber.errors import AmberError
 ALLOWED_MODULES = frozenset(
     {"math", "datetime", "statistics", "re", "json", "itertools", "collections"}
 )
+# ``from typing import Any`` and ``from __future__ import annotations`` are habits of the
+# synthesizing model (a live compile spent a repair round on one); plain type names are inert.
+# ``import typing`` stays out: ``typing.get_type_hints`` evaluates annotation strings, which the
+# AST check never sees.
+SAFE_TYPING_NAMES = frozenset(
+    {
+        "Any", "Callable", "Dict", "FrozenSet", "Iterable", "Iterator", "List", "Literal",
+        "Mapping", "Optional", "Sequence", "Set", "Tuple", "Union",
+    }
+)  # fmt: skip
 FORBIDDEN_NAMES = frozenset(
     {
         "exec",
@@ -63,9 +73,18 @@ def _safe_import(
     fromlist: tuple[str, ...] = (),
     level: int = 0,
 ) -> Any:
+    if level == 0 and _type_only_import(name, fromlist):
+        return importlib.import_module(name)
     if level != 0 or name.split(".")[0] not in ALLOWED_MODULES:
         raise ImportError(f"import of {name!r} is not allowed in transforms")
     return importlib.import_module(name)
+
+
+def _type_only_import(module: str | None, names: tuple[str, ...] | list[str] | None) -> bool:
+    """``from __future__ import …`` or ``from typing import <plain type names>``."""
+    if module == "__future__":
+        return True
+    return module == "typing" and bool(names) and set(names or ()) <= SAFE_TYPING_NAMES
 
 
 def safe_builtins() -> dict[str, Any]:
@@ -90,6 +109,8 @@ def check_source(source: str) -> None:
                     problems.append(f"import {alias.name}")
         elif isinstance(node, ast.ImportFrom):
             root = (node.module or "").split(".")[0]
+            if not node.level and _type_only_import(node.module, [a.name for a in node.names]):
+                continue
             if node.level or root not in ALLOWED_MODULES:
                 problems.append(f"from {node.module} import …")
         elif isinstance(node, ast.Attribute) and node.attr.startswith("__"):

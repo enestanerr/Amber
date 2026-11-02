@@ -26,6 +26,10 @@ from amber.compile.sandbox import (
         "class X:\n    pass\ndef f():\n    return X()",
         "def f():\n    global g\n    g = 1",
         "from . import sibling\ndef f():\n    return 1",
+        # the typing module itself evaluates annotation strings (get_type_hints)
+        "import typing\ndef f():\n    return 1",
+        "from typing import get_type_hints\ndef f():\n    return 1",
+        "from typing import Any, get_type_hints\ndef f():\n    return 1",
     ],
 )
 def test_check_source_rejects(source: str) -> None:
@@ -51,6 +55,27 @@ def test_load_function_with_allowed_imports() -> None:
         fn, {"inputs": {}, "r0": {"start": "2026-10-12"}, "r1": None, "r2": None}
     )
     assert out == {"as_of": "2026-10-11", "pi": 3}
+
+
+def test_type_only_imports_are_allowed() -> None:
+    """What the synthesizer habitually writes; a live compile lost a repair round to it."""
+    src = (
+        "from __future__ import annotations\n"
+        "from typing import Any, Dict\n"
+        "import datetime\n\n"
+        "def transform_step1(inputs: Dict[str, Any], r0: Any) -> Dict[str, Any]:\n"
+        "    y, w = inputs['week'].split('-W')\n"
+        "    d = datetime.date.fromisocalendar(int(y), int(w), 1) - datetime.timedelta(days=7)\n"
+        "    iso = d.isocalendar()\n"
+        "    return {'week': f'{iso[0]}-W{iso[1]:02d}'}\n"
+    )
+    fn = load_function(src, "transform_step1")
+    assert call_with_timeout(fn, {"inputs": {"week": "2026-W01"}, "r0": {}}) == {"week": "2025-W52"}
+    import_fn = fn.__globals__["__builtins__"]["__import__"]
+    with pytest.raises(ImportError):
+        import_fn("typing")  # no fromlist: the module object itself
+    with pytest.raises(ImportError):
+        import_fn("typing", None, None, ("get_type_hints",), 0)
 
 
 def test_load_function_requires_the_named_function() -> None:

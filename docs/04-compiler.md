@@ -290,6 +290,13 @@ float, bool, list, dict, set, tuple, any, all, isinstance, reversed, ValueError,
 Timeout 5 s via a worker thread + `concurrent.futures` with cancellation on timeout (document
 that CPU-bound infinite loops are a known limit; v0.2 uses a subprocess).
 
+> **Note (2026-11-02):** besides the module allow-list, `from __future__ import …` and
+> `from typing import <plain type names>` (`Any, Callable, Dict, FrozenSet, Iterable, Iterator,
+> List, Literal, Mapping, Optional, Sequence, Set, Tuple, Union`) are accepted: the synthesizing
+> model writes them habitually and a live compile lost a repair round to one. `import typing`
+> and every other name from it stay rejected, because `typing.get_type_hints` evaluates
+> annotation strings that the AST check never sees.
+
 The same sandbox module validates `program.py` at load time (lint) — the program itself runs
 in the normal interpreter (it has to call `ctx`), so REPORT.md tells users to review it.
 
