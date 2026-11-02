@@ -82,34 +82,46 @@ def check_servers_and_drift(manifest: Manifest, cfg: AmberConfig, root: Path) ->
 # --- ledger checks --------------------------------------------------------------
 
 
-def check_result_shape(ledger: Ledger, workflow: str, runs: int) -> Finding:
-    recent = ledger.recent_runs(workflow, runs)
+def check_result_shape(
+    ledger: Ledger, workflow: str, runs: int, *, version: int | None = None
+) -> Finding:
+    recent = ledger.recent_runs(workflow, runs, version=version)
     if not recent:
         return Finding("result_shape", "ok", "no runs yet")
     hard_runs = 0
     soft_runs = 0
-    detail = ""
+    hard_detail = soft_detail = ""
     for run in recent:
         events = [e for e in ledger.guard_events(run.id) if e["guard"] == "result_shape"]
         if any(e["severity"] == "hard" for e in events):
             hard_runs += 1
-            detail = detail or next(e["detail"] for e in events if e["severity"] == "hard")
+            hard_detail = hard_detail or next(
+                e["detail"] for e in events if e["severity"] == "hard"
+            )
         elif any(e["severity"] == "soft" for e in events):
             soft_runs += 1
-            detail = detail or next(e["detail"] for e in events if e["severity"] == "soft")
+            soft_detail = soft_detail or next(
+                e["detail"] for e in events if e["severity"] == "soft"
+            )
     if hard_runs:
         return Finding(
-            "result_shape", "hard", f"{detail} in {hard_runs}/{len(recent)} recent runs (hard)"
+            "result_shape",
+            "hard",
+            f"{hard_detail} in {hard_runs}/{len(recent)} recent runs (hard)",
         )
     if soft_runs * 2 >= len(recent):
         return Finding(
-            "result_shape", "soft", f"{detail} in {soft_runs}/{len(recent)} recent runs (soft)"
+            "result_shape",
+            "soft",
+            f"{soft_detail} in {soft_runs}/{len(recent)} recent runs (soft)",
         )
     return Finding("result_shape", "ok", f"no shape drift in the last {len(recent)} runs")
 
 
-def check_guard_stats(ledger: Ledger, workflow: str, runs: int) -> Finding:
-    recent = ledger.recent_runs(workflow, runs)
+def check_guard_stats(
+    ledger: Ledger, workflow: str, runs: int, *, version: int | None = None
+) -> Finding:
+    recent = ledger.recent_runs(workflow, runs, version=version)
     if not recent:
         return Finding("guard_stats", "ok", "no runs yet")
     stopped = sum(1 for r in recent if r.status == "stopped")
@@ -122,8 +134,15 @@ def check_guard_stats(ledger: Ledger, workflow: str, runs: int) -> Finding:
     return Finding("guard_stats", "ok", detail)
 
 
-def check_llm_health(ledger: Ledger, workflow: str, runs: int, min_confidence: float) -> Finding:
-    recent = ledger.recent_runs(workflow, runs)
+def check_llm_health(
+    ledger: Ledger,
+    workflow: str,
+    runs: int,
+    min_confidence: float,
+    *,
+    version: int | None = None,
+) -> Finding:
+    recent = ledger.recent_runs(workflow, runs, version=version)
     calls = [c for r in recent for c in ledger.llm_calls(r.id)]
     if not calls:
         return Finding("llm_health", "ok", "no llm calls yet")

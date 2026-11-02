@@ -107,9 +107,14 @@ def diagnose(
     findings: list[Finding] = []
     if probe_servers:
         findings.extend(check_servers_and_drift(manifest, cfg, root))
-    findings.append(check_result_shape(ledger, manifest.workflow, runs))
-    findings.append(check_guard_stats(ledger, manifest.workflow, runs))
-    findings.append(check_llm_health(ledger, manifest.workflow, runs, cfg.guards.min_confidence))
+    # statistics describe the program being diagnosed: runs of the version it replaced (e.g.
+    # the stops that led to a `compile --refresh`) must not keep a healed workflow degraded
+    v = manifest.version
+    findings.append(check_result_shape(ledger, manifest.workflow, runs, version=v))
+    findings.append(check_guard_stats(ledger, manifest.workflow, runs, version=v))
+    findings.append(
+        check_llm_health(ledger, manifest.workflow, runs, cfg.guards.min_confidence, version=v)
+    )
     findings.append(check_staleness(store, manifest))
     findings.append(check_program_lint(info, manifest))
     status, recommendation, rationale = decide(findings)

@@ -231,18 +231,24 @@ class Ledger:
             row = c.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
         return RunRow.from_row(row) if row else None
 
-    def recent_runs(self, workflow: str | None = None, n: int = 10) -> list[RunRow]:
+    def recent_runs(
+        self, workflow: str | None = None, n: int = 10, *, version: int | None = None
+    ) -> list[RunRow]:
+        """Newest first; optionally only the runs of one program version."""
+        where: list[str] = []
+        params: list[Any] = []
+        if workflow is not None:
+            where.append("workflow = ?")
+            params.append(workflow)
+        if version is not None:
+            where.append("version = ?")
+            params.append(version)
+        clause = f" WHERE {' AND '.join(where)}" if where else ""
         with self.db.read() as c:
-            if workflow is None:
-                rows = c.execute(
-                    "SELECT * FROM runs ORDER BY started_at DESC, rowid DESC LIMIT ?", (n,)
-                ).fetchall()
-            else:
-                rows = c.execute(
-                    "SELECT * FROM runs WHERE workflow = ?"
-                    " ORDER BY started_at DESC, rowid DESC LIMIT ?",
-                    (workflow, n),
-                ).fetchall()
+            rows = c.execute(
+                f"SELECT * FROM runs{clause} ORDER BY started_at DESC, rowid DESC LIMIT ?",
+                (*params, n),
+            ).fetchall()
         return [RunRow.from_row(r) for r in rows]
 
     def steps(self, run_id: str) -> list[dict[str, Any]]:
