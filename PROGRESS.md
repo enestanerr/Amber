@@ -138,3 +138,65 @@ outcome: success · calls 6 · tokens in 18,122 (cached 12,000) · out 966 · $0
 ```
 
 Coverage (`--cov=amber.trace`): canonical 98 % · jsonpath 91 % · models 94 % · store 98 %.
+
+## 2026-11-02 — P2 Recorders (adapters)
+
+**Decisions**: D6 order (claude-stream → claude-transcript → mcp-proxy → agent-sdk). D14:
+stream traces are `success` only when `result.subtype == "success"` and `is_error` is false;
+no `result` event or a non-zero exit → `failure` (trace still saved, CLI exits 1).
+
+**Spec corrections / notes** (recorded in `docs/02-trace-format.md`)
+
+- `mcp` 2.3.0 Python API is snake_case (`Tool.input_schema`, `ToolAnnotations.read_only_hint`).
+- Stream-json `init` lists tool names only → stub schemas; `amber record --mcp` enriches them
+  from the servers after the run (`adapters/enrich.py`). The proxy writes real schemas.
+- `amber record --from-stdin` gained `--prompt`; `mcp__…` parsing lives in the adapter.
+- `claude --version` is captured into `harness.version` for live recordings.
+
+**Built**
+
+- `adapters/base.py` (`RecordRequest`, `Adapter` protocol), `adapters/claude_cli_flags.py`
+  (single place for Claude flag names; argv preparation with variadic-flag awareness),
+  `adapters/claude_messages.py` (shared mapper: init/assistant/user/result, ANSI strip,
+  `permission_request` abort, denial detection, unclosed-call warnings),
+  `adapters/claude_stream.py` (subprocess streaming with a 16 MB line limit, stderr tail,
+  stdin replay), `adapters/claude_transcript.py` (session filter, sidechain/meta skip,
+  `parentUuid` chain with longest-branch rule, compaction note, `--latest` path encoding
+  incl. Windows drive letters), `adapters/mcp_proxy.py` (low-level `mcp.server.Server`
+  proxy, fragment writer with 64 KB blob offload, importer ordered by `ts`),
+  `adapters/agent_sdk.py` (duck-typed dataclass → dict conversion, lazy SDK import),
+  `adapters/enrich.py`.
+- CLI: `amber record`, `amber import`, `amber proxy`; `cli/_inputs.py` for `--input k=v`.
+- Fixtures regenerated from one seeded generator: `claude_stream/weekly_report_run{1,2,3}.jsonl`
+  (with `stream_event`, `rate_limit_event` and an ANSI-prefixed line), the trace goldens
+  `t1..t3` are now literally the mapper's output + schema enrichment (`started_at`/`duration_ms`
+  are `None` for replayed streams), `claude_transcript/session.jsonl` (compaction, sidechain,
+  foreign session, 4 calls), `mcp_proxy/{shop-1234,slack-1235}.jsonl`,
+  `servers/echo_server.py` (`MCPServer`).
+- Tests: 36 in `tests/unit/adapters` (incl. a fake `claude` shim on PATH exercising the real
+  subprocess path), 6 CLI tests, `tests/integration/test_proxy_roundtrip.py` (offline, real
+  stdio proxy in front of the echo server), `tests/integration/test_record_live.py` (`live`).
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run pytest -q tests/unit/adapters
+36 passed
+
+$ cat tests/fixtures/claude_stream/weekly_report_run1.jsonl | uv run amber record weekly-report --from-stdin --json | python -c "..."
+ACCEPT record: t_20261102_165647_4b9d4e 7 events        # adapter == claude-stream
+
+$ uv run amber import weekly-report tests/fixtures/claude_transcript/session.jsonl --json | python -c "..."
+ACCEPT import: t_20261102_165648_0f4ef2                 # adapter == claude-transcript
+
+$ uv run python tests/integration/test_proxy_roundtrip.py
+OK 3 fragments
+
+$ uv run amber record weekly-report --from-stdin --input week=2026-W43 < run2.jsonl
+Recorded weekly-report → t_20261102_165648_bc39fe  (success)
+  tool calls      6   (builtin 1 · shop 4 · slack 1)
+  judgment cands  1   (slack.post_message.text)
+  tokens          in 18,122 (cached 12,000) · out 966 · $0.034 · 19.5 s
+```
+
+Full suite: 111 passed, 1 skipped (live). ruff + pyright clean.

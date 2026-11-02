@@ -17,7 +17,8 @@ control back to the agent and recompiles.
 |---|---|
 | P0 Bootstrap — packaging, CLI skeleton (`--version`, `init`), lint/type/test/CI | done |
 | P1 Trace model + store — `Trace` models, canonicalization, JSON+SQLite store, `amber traces` | done |
-| P2–P10 | not started |
+| P2 Recorders — `amber record` (claude -p stream-json, `--from-stdin`, `--sdk`), `amber import` (transcripts, proxy fragments), `amber proxy` | done |
+| P3–P10 | not started |
 
 ## Install (development)
 

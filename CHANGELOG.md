@@ -8,6 +8,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Recorders (P2): `amber record` wrapping `claude -p … --output-format stream-json`
+  (flag injection, live step log, failure traces, denial warnings, schema enrichment via
+  `--mcp`), `--from-stdin`, `--sdk` (Agent SDK extra), `amber import` for Claude Code
+  transcripts (`--latest`) and MCP proxy fragments (`--proxy`), and `amber proxy`, a
+  harness-agnostic recording MCP server. Synthetic stream/transcript/proxy fixtures.
 - Trace model and store (P1): canonical `Trace` models, JSON-path utilities,
   canonicalization (`canonicalize_args`, `args_fingerprint`, `normalize_result`), JSON +
   SQLite `TraceStore`, `amber traces ls|show|rm`, seeded weekly-report fixtures.

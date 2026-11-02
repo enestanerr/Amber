@@ -137,15 +137,15 @@ uv run amber traces ls --json | python -c "import json,sys; json.load(sys.stdin)
 **Read:** `docs/02-trace-format.md` §Adapters, `docs/03-cli-spec.md` (`record`, `import`, `proxy`).
 
 **Tasks**
-- [ ] `adapters/base.py`: `Adapter` protocol (`name`, `async def record(...) -> Trace`).
-- [ ] `adapters/claude_messages.py`: shared mapper from Claude message dicts
+- [x] `adapters/base.py`: `Adapter` protocol (`name`, `async def record(...) -> Trace`).
+- [x] `adapters/claude_messages.py`: shared mapper from Claude message dicts
       (`{"type":"assistant"|"user"|"system"|"result", ...}`) to trace events. Handles:
       `tool_use` → pending call; `tool_result` (string or content-block list, `is_error`) →
       closes the call by `tool_use_id`; `text` blocks → `Thought`; `result` → `Outcome` with
       usage; `mcp__<server>__<tool>` → `server.tool`; builtin names → `builtin.<Name>`;
       `parent_tool_use_id` → `parent_call_id`; unknown event types ignored with a debug log.
       Strip ANSI escape sequences from lines before `json.loads`.
-- [ ] `adapters/claude_stream.py`: `amber record <workflow> [--input k=v]... [--mcp cfg.json]
+- [x] `adapters/claude_stream.py`: `amber record <workflow> [--input k=v]... [--mcp cfg.json]
       [--allow PATTERN]... -- claude -p "<task>" [extra claude flags]`. Injects
       `--output-format stream-json --verbose` (and `--mcp-config`, `--allowedTools`,
       `--permission-mode` when the Amber flags are given) unless already present; refuses if
@@ -153,15 +153,15 @@ uv run amber traces ls --json | python -c "import json,sys; json.load(sys.stdin)
       live step counter, writes the trace at exit, prints the summary table (calls, judgment
       candidates, tokens, cost, duration, trace id). Non-zero exit of `claude` → trace saved
       with `outcome.status = "failure"` and the CLI exits 1.
-- [ ] `adapters/claude_transcript.py`: `amber import <workflow> <session.jsonl | --latest>`.
+- [x] `adapters/claude_transcript.py`: `amber import <workflow> <session.jsonl | --latest>`.
       Implements the JSONL rules in `02-trace-format.md` §A2 (chain by `parentUuid`, filter to
       the file's own `sessionId`, skip `isSidechain`, handle `compact_boundary`, `toolUseResult`
       ignored, usage summed from assistant messages). `--latest` resolves
       `~/.claude/projects/<cwd with "/"→"-">/` newest `*.jsonl` that is not `agent-*.jsonl`.
-- [ ] `adapters/agent_sdk.py` (extra `[sdk]`): `amber record ... --sdk` runs
+- [x] `adapters/agent_sdk.py` (extra `[sdk]`): `amber record ... --sdk` runs
       `claude_agent_sdk.query(prompt, ClaudeAgentOptions(...))` and feeds messages to the same
       mapper (map `AssistantMessage/UserMessage/ResultMessage` dataclasses to dicts first).
-- [ ] `adapters/mcp_proxy.py`: `amber proxy --name <server> [--trace-dir DIR] -- <upstream cmd>`.
+- [x] `adapters/mcp_proxy.py`: `amber proxy --name <server> [--trace-dir DIR] -- <upstream cmd>`.
       A stdio MCP server built on the low-level `mcp.server.Server(on_list_tools=...,
       on_call_tool=...)` that connects to the upstream with `mcp.Client(StdioServerParameters(...))`,
       forwards `tools/list` verbatim (schemas untouched) and `tools/call`, and appends one JSON
@@ -169,10 +169,10 @@ uv run amber traces ls --json | python -c "import json,sys; json.load(sys.stdin)
       input_schema_hash`). `amber import <workflow> --proxy DIR` folds fragments into a trace
       (ordered by `ts`; thoughts absent; `adapter = "mcp-proxy"`). Pass through `env` explicitly
       (mcp v2 stdio children get a minimal env allow-list).
-- [ ] Fixtures: `tests/fixtures/claude_stream/*.jsonl` (hand-made, abbreviated but
+- [x] Fixtures: `tests/fixtures/claude_stream/*.jsonl` (hand-made, abbreviated but
       shape-correct), `tests/fixtures/claude_transcript/session.jsonl` (with a compaction
       boundary and one sidechain line), `tests/fixtures/mcp_proxy/*.jsonl`.
-- [ ] Integration test (marked `live`): record `examples/weekly-report` once via
+- [x] Integration test (marked `live`): record `examples/weekly-report` once via
       `claude -p` using the mock server (requires P8 servers; if P8 not yet done, use a 5-line
       `tests/fixtures/servers/echo_server.py` built on `mcp.server.MCPServer`).
 

@@ -113,6 +113,19 @@ Invariants (enforced by `Trace.model_validate` + a `check()` method, tested):
 
 ## 3. Adapters
 
+> [!NOTE] Implementation notes (P2, 2026-11-02)
+> - `mcp` 2.3.0 uses snake_case on the Python side: `Tool.input_schema`,
+>   `ToolAnnotations.read_only_hint` / `destructive_hint`, `CallToolResult.structured_content`.
+>   The wire format keeps camelCase; `normalize_result` accepts both.
+> - Claude's stream-json `init` event lists tool **names** only, so recorded traces start with
+>   `input_schema={}` stubs. `amber record --mcp cfg.json` connects to the configured servers
+>   after the run and replaces the stubs (`adapters/enrich.py`); `amber proxy` records real
+>   schemas directly (a `{"kind": "tools"}` header line per server).
+> - `amber record --from-stdin` accepts `--prompt TEXT` because piped stream-json carries no
+>   user prompt.
+> - Parsing of `mcp__<server>__<tool>` lives in `adapters/claude_messages.py`, not in
+>   `trace/canonical.py`, to keep `trace/` free of Claude specifics.
+
 ### A1. `claude-stream` — wrapping `claude -p`
 
 Invocation produced by `amber record`:
