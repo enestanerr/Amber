@@ -8,12 +8,13 @@ trailing whitespace).
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from amber.align.models import Provenance, StepSpec, TemplatePart
 from amber.trace.canonical import canonical_json
-from amber.trace.jsonpath import MISSING, get_path, iter_leaves
+from amber.trace.jsonpath import MISSING, format_path, get_path, iter_leaves, parse_path
 from amber.trace.models import ToolCall, Trace
 
 LARGE_BYTES = 20 * 1024
@@ -226,6 +227,52 @@ def resolve(values: dict[str, Any], index: Index, step_idx: int) -> Provenance:
     return Provenance(kind="unknown", large=large)
 
 
+def _list_nodes(obj: Any, prefix: str = "$") -> Iterator[tuple[str, list[Any]]]:
+    """Every list node in *obj*, parents before children."""
+    if isinstance(obj, dict):
+        for key, value in cast(dict[str, Any], obj).items():
+            yield from _list_nodes(value, format_path((*parse_path(prefix), key)))
+    elif isinstance(obj, list):
+        items = cast(list[Any], obj)
+        yield prefix, items
+        for i, value in enumerate(items):
+            yield from _list_nodes(value, f"{prefix}[{i}]")
+
+
+def variable_lists(anchor_args: Any, all_args: list[Any]) -> set[str]:
+    """Paths of lists whose length differs across a step's calls (or that some calls lack)."""
+    out: set[str] = set()
+    for path, items in _list_nodes(anchor_args):
+        if any(path.startswith(f"{p}[") for p in out):
+            continue  # inside a list that is already one leaf
+        for args in all_args:
+            other = get_path(args, path)
+            if not isinstance(other, list) or len(cast(list[Any], other)) != len(items):
+                out.add(path)
+                break
+    return out
+
+
+def arg_leaves(obj: Any, atomic: set[str], prefix: str = "$") -> Iterator[tuple[str, Any]]:
+    """``iter_leaves`` that keeps the lists at *atomic* paths whole.
+
+    A batch argument (17, 13 and 10 label updates in three recordings) cannot be explained
+    index by index: per-index leaves would compile to a fixed-length list. As one leaf it gets a
+    single provenance and, when unknown, a single hole that produces the whole list.
+    """
+    if prefix in atomic:
+        yield prefix, obj
+        return
+    if isinstance(obj, dict) and obj:
+        for key, value in cast(dict[str, Any], obj).items():
+            yield from arg_leaves(value, atomic, format_path((*parse_path(prefix), key)))
+    elif isinstance(obj, list) and obj:
+        for i, value in enumerate(cast(list[Any], obj)):
+            yield from arg_leaves(value, atomic, f"{prefix}[{i}]")
+    else:
+        yield prefix, obj
+
+
 def build_index(traces: dict[str, Trace]) -> Index:
     return {tid: TraceIndex(trace=t, inputs=dict(t.inputs)) for tid, t in traces.items()}
 
@@ -236,8 +283,12 @@ def mine_provenance(steps: list[StepSpec], traces: dict[str, Trace], warnings: l
     for step in steps:
         anchor_tid = next(iter(step.calls))
         anchor_call = call_at(traces[anchor_tid], step.calls[anchor_tid])
+        all_args = [call_at(traces[t], i).args for t, i in step.calls.items()]
+        atomic = variable_lists(anchor_call.args, all_args)
+        for path in sorted(atomic):
+            warnings.append(f"batch_arg: step {step.idx} {step.tool} {path} varies in length")
         shape_warned = False
-        for path, _ in iter_leaves(anchor_call.args):
+        for path, _ in arg_leaves(anchor_call.args, atomic):
             values: dict[str, Any] = {}
             for tid, event_idx in step.calls.items():
                 value = get_path(call_at(traces[tid], event_idx).args, path)

@@ -67,6 +67,13 @@ with truncated context).
 > the first live weekly-report recordings `top_products n=5` matched an unrelated
 > `rfm_snapshot $.result[22].f == 5` in all three runs. Varying values keep the order above.
 
+> **Note (2026-11-02):** a list argument whose length differs across a column's calls (a batch
+> write: 17, 13 and 10 label updates in three recordings) is mined as **one** leaf at the list's
+> path, with a `batch_arg` warning. Per-index leaves would compile to a fixed-length list that
+> cannot serve another input; as one leaf it resolves to `Const` when identical or else to a
+> single hole that produces the whole list. Fixed-length lists keep per-index leaves. Loops over
+> per-item calls remain v0.2.
+
 Provenance also produces **edges**: `col_j → col_k` if any arg of `k` references `j`.
 
 ### A4. Classification

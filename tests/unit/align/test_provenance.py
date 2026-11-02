@@ -142,3 +142,40 @@ def test_constant_value_prefers_const_over_a_list_position_ref() -> None:
     # a value that varies with the run is still explained by the list position
     first = _prov(s.steps, 1, "$.first")
     assert first.kind == "ref" and first.path == "$.rows[0].id"
+
+
+def test_batch_argument_of_varying_length_is_one_leaf() -> None:
+    """17, 13 and 10 label updates: one hole for the whole list, not per-index leaves."""
+    traces = []
+    for i, n in enumerate([4, 3, 2]):
+        issues = [{"number": 10 * i + k, "title": f"t{k}"} for k in range(n)]
+        updates = [{"number": x["number"], "labels": [f"area:{k}"]} for k, x in enumerate(issues)]
+        traces.append(
+            mk_trace(
+                f"t{i}",
+                [
+                    ("gh.list_issues", {"since": f"2026-10-2{i}"}, issues),
+                    ("gh.add_labels", {"updates": updates, "dry": False}, {"ok": True}),
+                ],
+                inputs={"since": f"2026-10-2{i}"},
+            )
+        )
+    s = build_skeleton(traces)
+    args = s.steps[1].args
+    assert sorted(args) == ["$.dry", "$.updates"]
+    assert args["$.updates"].kind == "unknown" and args["$.updates"].hole is not None
+    assert args["$.dry"].describe() == "Const(False)"
+    assert any(w.startswith("batch_arg: step 1 gh.add_labels $.updates") for w in s.warnings)
+
+
+def test_fixed_length_lists_keep_per_index_leaves() -> None:
+    traces = [
+        mk_trace(
+            f"t{i}",
+            [("a.get", {}, {"id": f"x{i}"}), ("a.put", {"ids": [f"x{i}", "fixed"]}, None)],
+        )
+        for i in range(2)
+    ]
+    args = build_skeleton(traces).steps[1].args
+    assert args["$.ids[0]"].describe() == "Ref(0,$.id)"
+    assert args["$.ids[1]"].describe() == "Const('fixed')"
