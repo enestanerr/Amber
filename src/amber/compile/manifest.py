@@ -98,6 +98,10 @@ class Manifest(_Model):
     trace_calls: dict[str, list[int]] = Field(default_factory=dict[str, list[int]])
     # per source trace: declared + inferred input values used for replay
     trace_inputs: dict[str, dict[str, Any]] = Field(default_factory=dict[str, dict[str, Any]])
+    # write-effect steps: a recorded result (volatile paths masked) returned on dry-run
+    placeholder_results: dict[int, Any] = Field(default_factory=dict[int, Any])
+    # builtin.Bash steps: regex the live command must fully match (recorded template)
+    bash_templates: dict[int, str] = Field(default_factory=dict[int, str])
 
     def tool(self, canonical: str) -> ToolEntry | None:
         for t in self.tools:

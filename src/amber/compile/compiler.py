@@ -3,9 +3,10 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from amber.align.models import Skeleton
 from amber.align.skeleton import build_skeleton
@@ -19,8 +20,10 @@ from amber.compile.versions import VersionInfo, next_version, save_manifest, wri
 from amber.config import AmberConfig
 from amber.errors import AmberError
 from amber.models.backend import ModelBackend
+from amber.runtime.backends.builtins import SUPPORTED as SUPPORTED_BUILTINS
 from amber.runtime.program_api import load_program
 from amber.runtime.verify import VerifyReport, mark_usable, verify_version
+from amber.trace.canonical import canonicalize_args
 from amber.trace.jsonpath import MISSING, get_path
 from amber.trace.models import ToolCall, Trace
 from amber.util.hashing import sha256_hex
@@ -112,6 +115,7 @@ async def compile_workflow(
     warnings: list[str] = []
     skeleton = build_skeleton(traces, keep_unreferenced=keep_unreferenced)
     warnings.extend(skeleton.warnings)
+    check_builtins(skeleton)
     holes = collect_holes(skeleton, traces)
     outcomes: list[HoleOutcome] = []
     if not dry_run and holes:
@@ -177,6 +181,8 @@ async def compile_workflow(
     manifest.output_schema = program.output_model.model_json_schema()
     manifest.trace_calls = trace_calls(skeleton)
     manifest.trace_inputs = trace_inputs(skeleton, traces)
+    manifest.placeholder_results = placeholder_results(skeleton, traces)
+    manifest.bash_templates = bash_templates(skeleton)
     save_manifest(info, manifest)
     verify_report: VerifyReport | None = None
     usable = False
@@ -198,6 +204,66 @@ async def compile_workflow(
         dry_run=dry_run,
         verify=verify_report,
     )
+
+
+class UnsupportedBuiltin(AmberError):
+    exit_code = 1
+
+
+def check_builtins(skeleton: Skeleton) -> None:
+    """Compile-time error for builtins the runtime cannot execute (``docs/05-runtime.md`` §2.2)."""
+    for step in skeleton.steps:
+        server, _, name = step.tool.partition(".")
+        if server == "builtin" and name not in SUPPORTED_BUILTINS:
+            raise UnsupportedBuiltin(
+                f"step {step.idx + 1} uses builtin.{name}, which Amber cannot run",
+                hint="Re-record with MCP tools or mark the step as judgment.",
+            )
+
+
+def placeholder_results(skeleton: Skeleton, traces: list[Trace]) -> dict[int, Any]:
+    """Recorded result (first trace, volatile paths masked) for every non-read step."""
+    by_id = {t.id: t for t in traces}
+    out: dict[int, Any] = {}
+    for step in skeleton.steps:
+        if step.effect == "read":
+            continue
+        tid = next(iter(step.calls))
+        call = by_id[tid].events[step.calls[tid]]
+        assert isinstance(call, ToolCall)
+        result: Any = call.result
+        if isinstance(result, dict):
+            masked = canonicalize_args(
+                cast(dict[str, Any], result), skeleton.volatile_paths.get(step.idx, [])
+            )
+            result = masked
+        out[step.idx] = result
+    return out
+
+
+def bash_templates(skeleton: Skeleton) -> dict[int, str]:
+    """Regex per ``builtin.Bash`` step: recorded literals fixed, provenance values wildcarded."""
+    out: dict[int, str] = {}
+    for step in skeleton.steps:
+        if step.tool != "builtin.Bash":
+            continue
+        prov = step.args.get("$.command")
+        if prov is None or prov.kind == "unknown":
+            raise UnsupportedBuiltin(
+                f"step {step.idx + 1} runs a Bash command Amber cannot reconstruct "
+                "from the recordings",
+                hint="Compiled programs may only run recorded commands; re-record with MCP tools "
+                "or mark the step as judgment.",
+            )
+        if prov.kind == "const":
+            out[step.idx] = re.escape(str(prov.value))
+        elif prov.kind == "template" and prov.parts:
+            out[step.idx] = "".join(
+                re.escape(p.literal) if p.literal is not None else "(.*?)" for p in prov.parts
+            )
+        else:
+            out[step.idx] = "(.*?)"
+    return out
 
 
 def trace_calls(skeleton: Skeleton) -> dict[str, list[int]]:
