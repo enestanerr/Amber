@@ -8,6 +8,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Doctor + fallback (P7): `amber doctor` (live schema/server probe, result-shape and guard
+  statistics, llm health, staleness, program lint → healthy/degraded/broken with a
+  recommendation, exit 5), and the fallback loop behind `amber run --fallback agent`
+  (proposal → sentry vetoes → arbiter → ledger → retry / agent resume / abort); fallback traces
+  are folded in by `amber compile --refresh`.
 - Run (P6): live MCP backend, safe builtins, guards (allowlist, budgets, write-effect dry-run,
   result shape, llm output, schema drift), SQLite ledger, runner with 0 agent turns,
   `amber run` (exit 4 on guard stop), `amber schedule` + `amber scheduler`.

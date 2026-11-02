@@ -23,7 +23,8 @@ control back to the agent and recompiles.
 | P5 Verify — cassette replay, `amber verify`, compile marks usable only after 3/3 replay | done |
 | P6 Run — live MCP backend, builtins, guards, ledger, `amber run` (0 agent turns), scheduler | done |
 | P8 Examples — weekly-report servers + `make demo-offline` | partial |
-| P7, P9, P10 | not started |
+| P7 Doctor + fallback — `amber doctor` (exit 5), `amber run --fallback agent`, recompile with resumed traces | done |
+| P9, P10 | not started |
 
 ## Install (development)
 

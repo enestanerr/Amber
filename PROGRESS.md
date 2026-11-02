@@ -438,3 +438,68 @@ $ make drift && amber run … → exit 4, stop_kind result_shape (tests/unit/cli
 ```
 
 Full suite: 257 passed, 1 skipped. ruff + pyright clean.
+
+## 2026-11-02 — P7 Doctor + fallback loop
+
+**Built**
+
+- `doctor/checks.py`: `servers` + `schema_drift` (probe through the same `LiveBackend` the
+  runner uses), `result_shape` (hard events in any recent run → hard; soft in ≥ 50 % → soft),
+  `guard_stats` (stop rate ≥ 30 % soft, ≥ 60 % hard), `llm_health` (validation failures ≥ 20 %
+  or low confidence ≥ 50 % → soft), `staleness` (newer traces not in the version), `program_lint`
+  (lint + program hash). `doctor/diagnosis.py`: the decision table → `Diagnosis`
+  (`healthy|degraded|broken`, `none|recompile|fallback|re-record`, rationale, next command).
+  CLI `amber doctor <wf> [--runs N] [--no-probe] [--json]` → exit 5 unless healthy.
+- `fallback/proposal.py` (`FallbackProposal` from a stopped `RunResult`: failing step, completed
+  steps, completed/remaining write steps, proposed action from the stop kind),
+  `fallback/sentry.py` (vetoes: `no_fallback_flag`, `daily_budget`, `writes_already_done`,
+  `servers_unreachable`, `budget_exhausted`, `lint_failure`, `writes_not_allowed`),
+  `fallback/arbiter.py` (table → `retry | fallback_resume | abort`; `fallback_full` always
+  degrades to resume in v0.1; vetoed actions abort with the veto's reason; every decision is
+  written to `decision_records` before anything acts), `fallback/agent_fallback.py` (resume
+  prompt from `resume_prompt.md.j2`, relaunch via the `claude-stream` adapter with the
+  recorded `--mcp`/`--allow`/`--permission-mode` now stored in `Trace.harness` and
+  `manifest.recording`, the compiled run's completed calls spliced in front of the agent's
+  events, `origin="fallback"`, `resumed_from_step`), `fallback/pipeline.py` (orchestration;
+  `retry` re-runs once and re-decides).
+- Runner keeps `completed_calls` (args + results) for the resume; ledger `set_agent_turns`;
+  the cassette no longer double-counts `prefix_calls` that were spliced into the events.
+- `amber run --fallback agent` prints the decision chain, saves the fallback trace and points
+  to `amber compile --refresh`; `compile --refresh` folds the resumed trace in (v2 verifies
+  against all traces, including the fallback one).
+
+**Acceptance (2026-11-02)** — offline parts run in `examples/weekly-report` with the recorded
+model backend; the live agent step is exercised by the unit tests through a fake `claude`.
+
+```
+$ uv run pytest -q tests/unit/doctor tests/unit/fallback
+22 passed   (decision tables, veto rules, arbiter, resume prompt golden, splice, pipeline with a
+             fake claude → fallback trace → compile --refresh → v2 verifies 4/4, CLI run --fallback agent)
+
+$ make drift && uv run amber run weekly-report --input week=2026-W44 --allow-writes; echo $?
+  #2   shop.list_orders             stopped      15 ms  $[0]: missing key 'total'
+Run weekly-report v1 → stopped  (r_20261102_181356_6111c3, live)
+error: run … stopped: result_shape — $[0]: missing key 'total'
+4
+
+$ uv run amber doctor weekly-report; echo $?
+Doctor weekly-report v1  → degraded
+  ✓ servers        2/2 reachable
+  ✓ schema_drift   5 tool schemas match
+  ✗ result_shape   $[0]: missing key 'total' in 1/2 recent runs (hard)
+  ~ guard_stats    stop rate 1/2 (50%)
+  ✓ llm_health     0 validation failures, 0 low-confidence in 1 calls
+  ✓ staleness      v1 covers all traces
+  ✓ program_lint   program.py passes lint and matches the manifest
+Recommendation: fallback — run `amber run weekly-report --fallback agent`, then `amber compile weekly-report --refresh`
+5
+
+$ uv run amber doctor weekly-report --json | python -c "...assert d['status']!='healthy' and d['recommendation'] in ('fallback','recompile')"
+ACCEPT doctor: degraded fallback
+```
+
+Live acceptance (`amber run … --fallback agent` with the real `claude`, then `compile --refresh`
+and `verify`) is wired (`make heal`) but was not run here: it needs a logged-in `claude` and
+spends tokens. The PLAN's price-watch variant of this story needs the P8 price-watch example.
+
+Full suite: 279 passed, 1 skipped. ruff + pyright clean.

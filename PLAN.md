@@ -371,29 +371,29 @@ uv run amber run weekly-report --input week=2026-W44 --allow-writes --json | pyt
 **Read:** `docs/05-runtime.md` §4 (doctor), §5 (fallback policy), §6 (recompile).
 
 **Tasks**
-- [ ] `doctor/checks.py`: `SchemaDriftCheck` (live `list_tools` input-schema hash vs manifest
+- [x] `doctor/checks.py`: `SchemaDriftCheck` (live `list_tools` input-schema hash vs manifest
       per tool), `ResultShapeDriftCheck` (last N runs' soft/hard shape events), `GuardStatsCheck`
       (stop rate), `LLMHealthCheck` (validation failures, low confidence rate), `StalenessCheck`
       (traces newer than the program), `ServerReachabilityCheck`.
-- [ ] `doctor/diagnosis.py`: `Diagnosis {status: healthy|degraded|broken, findings[],
+- [x] `doctor/diagnosis.py`: `Diagnosis {status: healthy|degraded|broken, findings[],
       recommendation: none|recompile|fallback|re-record, rationale}` with the decision table
       from the spec. CLI `amber doctor <workflow> [--json]`; exit 5 when not healthy.
-- [ ] `fallback/proposal.py`: `FallbackProposal` built from a `GuardStop` (step, kind, context
+- [x] `fallback/proposal.py`: `FallbackProposal` built from a `GuardStop` (step, kind, context
       summary, completed write steps).
-- [ ] `fallback/sentry.py`: veto rules — `--no-fallback`; daily fallback budget (default 3 per
+- [x] `fallback/sentry.py`: veto rules — `--no-fallback`; daily fallback budget (default 3 per
       workflow); a write step already executed in this run → no automatic agent re-run of the
       *whole* task (only `resume` mode); budget exhausted; server unreachable (fallback would
       fail too → recommend re-record).
-- [ ] `fallback/arbiter.py`: decision table → `retry` (transient tool error, once),
+- [x] `fallback/arbiter.py`: decision table → `retry` (transient tool error, once),
       `fallback_resume` (drift at step k: agent continues from k with completed results as
       context), `abort`. Every decision → `decision_records` (proposal, vetoes, decision,
       reason, actor, ts).
-- [ ] `fallback/agent_fallback.py`: builds the resume prompt (original task + inputs +
+- [x] `fallback/agent_fallback.py`: builds the resume prompt (original task + inputs +
       completed steps' results as JSON + "the step `<tool>` failed with `<reason>`; continue
       from there"), runs the `claude-stream` adapter with the workflow's MCP config, stores the
       trace with `origin: fallback`, `resumed_from_step: k`. `amber compile --refresh` then
       includes it; the skeleton merges the resumed trace by aligning its calls after step k.
-- [ ] Wire into runner: `--fallback agent` enables the loop; print the decision chain.
+- [x] Wire into runner: `--fallback agent` enables the loop; print the decision chain.
 
 **Acceptance**
 ```bash
