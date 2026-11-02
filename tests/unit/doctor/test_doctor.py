@@ -195,7 +195,7 @@ def test_doctor_cli(
 
 
 def _ledger_run(
-    ledger: Ledger, version: int, status: str, events: list[tuple[str, str]] = ()
+    ledger: Ledger, version: int, status: str, events: tuple[tuple[str, str], ...] = ()
 ) -> str:
     run_id = ledger.open_run("wf", version, "live", {})
     for severity, detail in events:
@@ -213,7 +213,7 @@ def test_doctor_statistics_cover_only_the_diagnosed_version(tmp_path: Path) -> N
 
     ledger = Ledger(tmp_path / "amber.db")
     for _ in range(3):
-        _ledger_run(ledger, 1, "stopped", [("hard", "$.total: missing key")])
+        _ledger_run(ledger, 1, "stopped", (("hard", "$.total: missing key"),))
     _ledger_run(ledger, 2, "ok")
     assert check_guard_stats(ledger, "wf", 10, version=1).severity == "hard"
     assert check_guard_stats(ledger, "wf", 10, version=2).severity == "ok"
@@ -225,7 +225,7 @@ def test_result_shape_detail_comes_from_the_hard_event(tmp_path: Path) -> None:
     from amber.doctor.checks import check_result_shape
 
     ledger = Ledger(tmp_path / "amber.db")
-    _ledger_run(ledger, 1, "stopped", [("hard", "$: type array, recorded object")])
-    _ledger_run(ledger, 1, "ok", [("soft", "$: empty list where recordings had items")])
+    _ledger_run(ledger, 1, "stopped", (("hard", "$: type array, recorded object"),))
+    _ledger_run(ledger, 1, "ok", (("soft", "$: empty list where recordings had items"),))
     finding = check_result_shape(ledger, "wf", 10, version=1)
     assert finding.severity == "hard" and finding.detail.startswith("$: type array")
