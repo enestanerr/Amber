@@ -508,6 +508,7 @@ def generate(
                 schema_name=hole.schema_name,
                 fields=list(fields),
                 context_keys=list(hole.context_keys),
+                field_paths={} if hole.kind == "gate" else dict(hole.fields),
             )
         )
     return Generated(

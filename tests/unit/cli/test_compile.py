@@ -34,7 +34,8 @@ def test_compile_json_and_artifacts(project: Path) -> None:
     r = runner.invoke(app, ["compile", "weekly-report", "--json"])
     assert r.exit_code == 0, r.output
     data = json.loads(r.stdout)
-    assert data["version"] == 1 and data["holes_filled"] >= 2 and data["usable"] is False
+    assert data["version"] == 1 and data["holes_filled"] >= 2 and data["usable"] is True
+    assert data["verify"]["passed"] is True
     assert [h["id"] for h in data["holes"]] == ["transform_step3", "judgment_step4"]
     v1 = project / "programs" / "weekly-report" / "v1"
     program = (v1 / "program.py").read_text(encoding="utf-8")
@@ -53,7 +54,9 @@ def test_compile_human_output_and_version_bump(project: Path) -> None:
     assert first.exit_code == 0, first.output
     assert "holes filled 2/2" in first.stdout and "v1" in first.stdout
     second = runner.invoke(app, ["compile", "weekly-report", "--json"])
-    assert json.loads(second.stdout)["version"] == 2  # v1 is not usable yet → bump
+    assert json.loads(second.stdout)["version"] == 1  # same skeleton, v1 usable → reuse
+    third = runner.invoke(app, ["compile", "weekly-report", "--refresh", "--json"])
+    assert json.loads(third.stdout)["version"] == 2  # --refresh bumps
     ls = runner.invoke(app, ["programs", "ls", "--json"])
     rows = json.loads(ls.stdout)
     assert [row["version"] for row in rows] == [1, 2] and rows[0]["llm_steps"] == 1

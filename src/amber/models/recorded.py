@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any, cast
 
@@ -23,6 +24,7 @@ from amber.trace.models import Usage
 from amber.util.json import read_json
 
 ENV_FILLS = "AMBER_MODEL_FILLS"
+_ID_RE = re.compile(r'"(?:hole_id|step_id)":\s*"([^"]+)"')
 
 
 def default_fills_dir() -> Path:
@@ -67,7 +69,9 @@ class RecordedBackend:
         try:
             obj = json.loads(user)
         except ValueError:
-            return user.strip()[:80], 0
+            # rendered judgment prompts end with a JSON block that carries the step id
+            m = _ID_RE.search(user)
+            return (m.group(1) if m else user.strip()[:80]), 0
         if isinstance(obj, dict):
             d = cast(dict[str, Any], obj)
             key = d.get("hole_id") or d.get("step_id") or ""

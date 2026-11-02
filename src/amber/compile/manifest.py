@@ -55,6 +55,7 @@ class LlmStep(_Model):
     schema_name: str
     fields: list[FieldSpec] = Field(default_factory=list[FieldSpec])
     context_keys: list[str] = Field(default_factory=list[str])
+    field_paths: dict[str, str] = Field(default_factory=dict[str, str])  # field → arg path
     model_hint: str | None = None
 
 
@@ -93,6 +94,10 @@ class Manifest(_Model):
     usable: bool = False
     warnings: list[str] = Field(default_factory=list[str])
     recording: dict[str, str] = Field(default_factory=dict[str, str])
+    # per source trace: event idx of each kept step's call (-1 when the step is absent)
+    trace_calls: dict[str, list[int]] = Field(default_factory=dict[str, list[int]])
+    # per source trace: declared + inferred input values used for replay
+    trace_inputs: dict[str, dict[str, Any]] = Field(default_factory=dict[str, dict[str, Any]])
 
     def tool(self, canonical: str) -> ToolEntry | None:
         for t in self.tools:

@@ -20,7 +20,9 @@ from amber.config import AmberConfig
 from amber.errors import AmberError
 from amber.models.backend import ModelBackend
 from amber.runtime.program_api import load_program
-from amber.trace.models import Trace
+from amber.runtime.verify import VerifyReport, mark_usable, verify_version
+from amber.trace.jsonpath import MISSING, get_path
+from amber.trace.models import ToolCall, Trace
 from amber.util.hashing import sha256_hex
 from amber.util.time import utcnow
 
@@ -38,6 +40,7 @@ class CompileResult:
     program_source: str
     warnings: list[str] = field(default_factory=list[str])
     dry_run: bool = False
+    verify: VerifyReport | None = None
 
     @property
     def holes_filled(self) -> int:
@@ -53,6 +56,7 @@ class CompileResult:
             "skeleton_hash": self.skeleton.hash,
             "program_hash": self.manifest.program_hash,
             "holes_filled": self.holes_filled,
+            "verify": self.verify.to_json() if self.verify is not None else None,
             "holes": [
                 {
                     "id": o.hole.id,
@@ -171,12 +175,20 @@ async def compile_workflow(
     program = load_program(info.program_path)
     manifest.inputs_schema = program.inputs_model.model_json_schema()
     manifest.output_schema = program.output_model.model_json_schema()
+    manifest.trace_calls = trace_calls(skeleton)
+    manifest.trace_inputs = trace_inputs(skeleton, traces)
     save_manifest(info, manifest)
+    verify_report: VerifyReport | None = None
+    usable = False
+    if not dry_run:
+        verify_report = verify_version(info, traces)
+        usable = mark_usable(info, verify_report)
+        manifest = info.manifest() or manifest
     return CompileResult(
         workflow=skeleton.workflow,
         version=version,
         path=info.path,
-        usable=False,
+        usable=usable,
         skeleton=skeleton,
         manifest=manifest,
         holes=holes,
@@ -184,4 +196,36 @@ async def compile_workflow(
         program_source=generated.source,
         warnings=warnings,
         dry_run=dry_run,
+        verify=verify_report,
     )
+
+
+def trace_calls(skeleton: Skeleton) -> dict[str, list[int]]:
+    """``trace id → [event idx per kept step, -1 if absent]`` for the cassette."""
+    return {tid: [step.calls.get(tid, -1) for step in skeleton.steps] for tid in skeleton.traces}
+
+
+def trace_inputs(skeleton: Skeleton, traces: list[Trace]) -> dict[str, dict[str, Any]]:
+    """Declared inputs plus inferred ones read back from each trace's recorded args."""
+    by_id = {t.id: t for t in traces}
+    out: dict[str, dict[str, Any]] = {}
+    for tid in skeleton.traces:
+        values: dict[str, Any] = dict(by_id[tid].inputs)
+        for name, spec in skeleton.inputs.items():
+            if spec.source != "inferred" or name in values:
+                continue
+            for step in skeleton.steps:
+                if tid not in step.calls:
+                    continue
+                for path, prov in step.args.items():
+                    if prov.kind == "input" and prov.name == name:
+                        call = by_id[tid].events[step.calls[tid]]
+                        assert isinstance(call, ToolCall)
+                        leaf = get_path(call.args, path)
+                        if leaf is not MISSING:
+                            values[name] = leaf
+                        break
+                if name in values:
+                    break
+        out[tid] = values
+    return out
