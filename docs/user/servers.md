@@ -32,6 +32,14 @@ if __name__ == "__main__":
 **Stable shapes.** Result-shape guards are inferred from the recordings (keys present in every
 recording become required). Renaming or dropping a key is drift; adding one is a soft event.
 
+**Structured results.** Return JSON (a dict or a list), not prose. Result-shape guards and the
+doctor only see structure: a tool that answers with markdown text (as Playwright MCP's
+`browser_evaluate` does) can change completely without tripping a guard.
+
+**Batch writes.** Amber 0.1 does not collapse loops, so one call per item (label each issue)
+compiles to a fixed number of steps. A batch tool (`add_labels(updates: list[...])`) compiles to
+one step whose list argument a single hole fills, and serves any number of items.
+
 **Explicit arguments.** Dates, ids and limits passed as arguments become provenance edges
 (`Ref`, `Template`) the compiler can reproduce. Hidden state (the server remembering the last
 call) cannot be replayed.

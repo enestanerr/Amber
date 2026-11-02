@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1220" height="380" viewBox="0 0 1220 380" role="img" aria-labelledby="t d">
+  <title id="t">How Amber works</title>
+  <desc id="d">Record the agent a few times, align the runs, compile a program with typed holes, verify it by replaying every recording, run it live with guards, and let the doctor detect drift. On drift the agent resumes from the failed step and the new trace is compiled into the next version.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#C2410C"/>
+    </marker>
+    <style>
+      .bg { fill: #FFFBF2; stroke: #F1E3C6; }
+      .box { fill: #FFFFFF; stroke: #F2C46D; stroke-width: 2; }
+      .hot { fill: #FFF4D6; stroke: #E8A33D; stroke-width: 2; }
+      .loop { fill: #FFF4D6; stroke: #E8A33D; stroke-width: 2; stroke-dasharray: 7 5; }
+      .title { font: 700 19px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #9A3412; }
+      .num { font: 600 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #C2410C; letter-spacing: 1px; }
+      .body { font: 400 13.5px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #44403C; }
+      .label { font: 500 13.5px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #9A3412; }
+      .mono { font: 500 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #9A3412; }
+      .caption { font: italic 400 14.5px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #78716C; }
+      .edge { stroke: #C2410C; stroke-width: 2; fill: none; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="1" y="1" width="1218" height="378" rx="18"/>
+
+  <!-- 1 record -->
+  <rect class="box" x="36" y="36" width="168" height="132" rx="14"/>
+  <text class="num" x="120" y="60" text-anchor="middle">STEP 1</text>
+  <text class="title" x="120" y="84" text-anchor="middle">record</text>
+  <text class="body" x="120" y="110" text-anchor="middle">Claude Code does</text>
+  <text class="body" x="120" y="128" text-anchor="middle">the task 3 times,</text>
+  <text class="body" x="120" y="146" text-anchor="middle">different inputs</text>
+  <line class="edge" x1="206" y1="102" x2="228" y2="102" marker-end="url(#arrow)"/>
+
+  <!-- 2 align -->
+  <rect class="box" x="232" y="36" width="168" height="132" rx="14"/>
+  <text class="num" x="316" y="60" text-anchor="middle">STEP 2</text>
+  <text class="title" x="316" y="84" text-anchor="middle">align</text>
+  <text class="body" x="316" y="110" text-anchor="middle">line the runs up,</text>
+  <text class="body" x="316" y="128" text-anchor="middle">explain every value:</text>
+  <text class="body" x="316" y="146" text-anchor="middle">input, earlier result…</text>
+  <line class="edge" x1="402" y1="102" x2="424" y2="102" marker-end="url(#arrow)"/>
+
+  <!-- 3 compile -->
+  <rect class="box" x="428" y="36" width="168" height="132" rx="14"/>
+  <text class="num" x="512" y="60" text-anchor="middle">STEP 3</text>
+  <text class="title" x="512" y="84" text-anchor="middle">compile</text>
+  <text class="body" x="512" y="110" text-anchor="middle">code for the steps,</text>
+  <text class="body" x="512" y="128" text-anchor="middle">typed holes for the</text>
+  <text class="body" x="512" y="146" text-anchor="middle">model to fill</text>
+  <line class="edge" x1="598" y1="102" x2="620" y2="102" marker-end="url(#arrow)"/>
+
+  <!-- 4 verify -->
+  <rect class="box" x="624" y="36" width="168" height="132" rx="14"/>
+  <text class="num" x="708" y="60" text-anchor="middle">STEP 4</text>
+  <text class="title" x="708" y="84" text-anchor="middle">verify</text>
+  <text class="body" x="708" y="110" text-anchor="middle">replay every</text>
+  <text class="body" x="708" y="128" text-anchor="middle">recording; must</text>
+  <text class="body" x="708" y="146" text-anchor="middle">match call for call</text>
+  <line class="edge" x1="794" y1="102" x2="816" y2="102" marker-end="url(#arrow)"/>
+
+  <!-- 5 run -->
+  <rect class="hot" x="820" y="36" width="168" height="132" rx="14"/>
+  <text class="num" x="904" y="60" text-anchor="middle">STEP 5</text>
+  <text class="title" x="904" y="84" text-anchor="middle">run</text>
+  <text class="body" x="904" y="110" text-anchor="middle">live MCP calls,</text>
+  <text class="body" x="904" y="128" text-anchor="middle">a guard on each,</text>
+  <text class="body" x="904" y="146" text-anchor="middle">llm() for judgment</text>
+  <line class="edge" x1="990" y1="102" x2="1012" y2="102" marker-end="url(#arrow)"/>
+
+  <!-- 6 doctor -->
+  <rect class="box" x="1016" y="36" width="168" height="132" rx="14"/>
+  <text class="num" x="1100" y="60" text-anchor="middle">STEP 6</text>
+  <text class="title" x="1100" y="84" text-anchor="middle">doctor</text>
+  <text class="body" x="1100" y="110" text-anchor="middle">schema and shape</text>
+  <text class="body" x="1100" y="128" text-anchor="middle">drift, guard stats,</text>
+  <text class="body" x="1100" y="146" text-anchor="middle">a recommendation</text>
+
+  <!-- drift: doctor to fallback -->
+  <line class="edge" x1="1100" y1="170" x2="1100" y2="226" marker-end="url(#arrow)"/>
+  <text class="label" x="1110" y="204">drift</text>
+
+  <!-- fallback -->
+  <rect class="loop" x="904" y="230" width="280" height="64" rx="14"/>
+  <text class="title" x="1044" y="256" text-anchor="middle" style="font-size:16px">fallback</text>
+  <text class="body" x="1044" y="279" text-anchor="middle">the agent resumes at the failed step</text>
+
+  <!-- new trace back into align -->
+  <path class="edge" d="M 902 262 L 316 262 L 316 174" marker-end="url(#arrow)"/>
+  <text class="label" x="610" y="252" text-anchor="middle">new trace</text>
+  <text class="mono" x="610" y="284" text-anchor="middle">amber compile --refresh  →  v2</text>
+
+  <text class="caption" x="610" y="346" text-anchor="middle">Deterministic compiler, typed holes: the model only fills holes, and every fill is checked against the recordings.</text>
+</svg>

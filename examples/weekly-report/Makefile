@@ -25,7 +25,7 @@ verify:           ## replay against every source trace
 	$(AMBER) verify $(WF)
 
 run:              ## live run against the mock servers (writes allowed: posts to .outbox/slack.jsonl)
-	$(AMBER) run $(WF) --input week=2026-W45 --allow-writes
+	$(AMBER) run $(WF) --input week=2026-W40 --allow-writes
 
 drift:            ## switch the shop to scenario B (list_orders returns `amount` instead of `total`)
 	uv run python scenario.py B
@@ -34,7 +34,7 @@ undrift:          ## back to scenario A
 	uv run python scenario.py A
 
 heal:             ## fallback to the agent, recompile, verify
-	$(AMBER) run $(WF) --input week=2026-W45 --allow-writes --fallback agent
+	$(AMBER) run $(WF) --input week=2026-W41 --allow-writes --fallback agent
 	$(AMBER) compile $(WF) --refresh
 	$(AMBER) verify $(WF)
 
