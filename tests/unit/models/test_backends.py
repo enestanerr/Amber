@@ -220,3 +220,15 @@ def test_usage_cost_is_optional_and_left_out_when_unknown() -> None:
     assert "cost_usd" not in Usage(input_tokens=1).model_dump(mode="json")
     assert (Usage() + Usage()).cost_usd is None
     assert (Usage(cost_usd=0.5) + Usage()).cost_usd == 0.5
+
+
+def test_optional_backend_is_none_without_claude_or_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`amber run` / `amber scheduler` must work without a model when none is needed (CI has
+    neither the claude CLI nor an API key; a logged-in CLI hid this locally)."""
+    from amber.models.select import optional_backend
+
+    assert optional_backend(ModelsCfg(backend="auto")) is None
+    assert optional_backend(ModelsCfg(backend="recorded")) is not None
+    monkeypatch.setenv("AMBER_MODEL_BACKEND", "nope")
+    with pytest.raises(ModelError, match="unknown model backend"):
+        optional_backend(ModelsCfg())

@@ -179,9 +179,7 @@ class TraceStore:
                 reindexed.add(trace.id)
                 changes += 1
         # a row whose file was just re-indexed under another spelling of its path is not stale
-        stale = [
-            tid for tid, path in known.items() if path not in on_disk and tid not in reindexed
-        ]
+        stale = [tid for tid, path in known.items() if path not in on_disk and tid not in reindexed]
         if stale:
             self.db.write(
                 lambda c: c.executemany("DELETE FROM traces WHERE id = ?", [(t,) for t in stale])

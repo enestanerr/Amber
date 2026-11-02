@@ -11,7 +11,7 @@ from amber.cli._context import project
 from amber.cli._inputs import parse_inputs
 from amber.cli._output import JsonOpt, get_output
 from amber.compile.versions import get_version
-from amber.models.select import resolve_backend
+from amber.models.select import optional_backend
 from amber.runtime.ledger import Ledger
 from amber.runtime.runner import run_program
 from amber.runtime.scheduler import Schedule, Schedules, run_scheduler
@@ -81,7 +81,7 @@ def scheduler(
     """Foreground loop: run every due schedule (logs to .amber/logs/scheduler.log)."""
     root, cfg = project(ctx)
     schedules = _schedules(ctx)
-    backend = resolve_backend(cfg.models)
+    backend = optional_backend(cfg.models)
 
     def run_one(s: Schedule) -> str:
         info = get_version(root, s.workflow, usable_only=True)

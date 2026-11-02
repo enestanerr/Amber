@@ -34,3 +34,19 @@ def resolve_backend(cfg: ModelsCfg | None = None) -> ModelBackend:
         "no model backend available",
         hint="Set ANTHROPIC_API_KEY, or install and log in the claude CLI.",
     )
+
+
+def optional_backend(cfg: ModelsCfg | None = None) -> ModelBackend | None:
+    """:func:`resolve_backend`, or ``None`` when ``auto`` finds nothing.
+
+    Running a program needs a model only at its judgment steps (the runner stops there with a
+    guard event when there is none), and a scheduler with nothing due needs none at all. An
+    explicitly configured but unknown backend still raises.
+    """
+    choice = os.environ.get(ENV_BACKEND) or (cfg.backend if cfg else "auto")
+    if choice != "auto":
+        return resolve_backend(cfg)
+    try:
+        return resolve_backend(cfg)
+    except ModelError:
+        return None

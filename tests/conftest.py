@@ -23,7 +23,10 @@ _AMBER_ENV = (
     "AMBER_LOG",
     "AMBER_SCENARIO",
     "AMBER_OUTBOX",
+    "AMBER_MODEL_FILLS",
+    "AMBER_CLI_EFFORT",
 )
+_CLAUDE_NAMES = ("claude", "claude.exe", "claude.cmd", "claude.bat")
 
 FAKE_CLAUDE = """
 import os, sys
@@ -67,9 +70,19 @@ def update_golden(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture(autouse=True)
-def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
+def _clean_env(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
     for name in _AMBER_ENV:
         monkeypatch.delenv(name, raising=False)
+    if request.node.get_closest_marker("live") is None:
+        # unit tests must see what CI sees: no real `claude` on PATH. A logged-in CLI hid a
+        # scheduler bug locally (and an auto-resolved backend could spend tokens); tests that
+        # need a claude install the `fake_claude` shim after this fixture.
+        kept = [
+            d
+            for d in os.environ.get("PATH", "").split(os.pathsep)
+            if d and not any((Path(d) / n).is_file() for n in _CLAUDE_NAMES)
+        ]
+        monkeypatch.setenv("PATH", os.pathsep.join(kept))
 
 
 def install_fake_claude(bin_dir: Path, monkeypatch: pytest.MonkeyPatch, fixture: Path) -> Path:

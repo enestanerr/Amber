@@ -12,7 +12,7 @@ from amber.cli._inputs import parse_inputs
 from amber.cli._output import JsonOpt, fail, get_output, stderr
 from amber.compile.versions import get_version
 from amber.errors import GuardStopped, UsageError
-from amber.models.select import resolve_backend
+from amber.models.select import optional_backend
 from amber.runtime.runner import RunResult, StepLog, run_program
 
 
@@ -51,7 +51,7 @@ def run(
         raise UsageError(f"bad --fallback {fallback!r}", hint="Use agent or none.")
     root, cfg = project(ctx)
     info = get_version(root, workflow, version, usable_only=version is None and not force)
-    backend = resolve_backend(cfg.models)
+    backend = optional_backend(cfg.models)
 
     def progress(step: StepLog) -> None:
         if not out.json_mode:
