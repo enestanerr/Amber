@@ -29,7 +29,7 @@ from amber.runtime.backends.live import CallOutcome, LiveBackend, ToolError
 from amber.runtime.guards import PROCEED, GuardEvent, Guards, GuardStop
 from amber.runtime.judgment import judge
 from amber.runtime.ledger import Ledger
-from amber.runtime.program_api import Program, load_program
+from amber.runtime.program_api import Program, jsonable, load_program
 from amber.trace.canonical import split_canonical
 from amber.trace.models import ToolCall, Usage
 from amber.util.hashing import digest
@@ -155,7 +155,7 @@ class LiveContext:
 
     # -- Context --------------------------------------------------------------
     def tool(self, name: str, /, **args: Any) -> Any:
-        return self._submit(self._tool(name, dict(args)))
+        return self._submit(self._tool(name, {k: jsonable(v) for k, v in args.items()}))
 
     async def _tool(self, name: str, args: dict[str, Any]) -> Any:
         step_idx = self._step_for(name)

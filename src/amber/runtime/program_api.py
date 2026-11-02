@@ -25,6 +25,18 @@ T = TypeVar("T", bound=BaseModel)
 PROGRAM_ATTR = "__amber_program__"
 
 
+def jsonable(value: Any) -> Any:
+    """Plain JSON values for a tool call: a judgment can return nested models (a batch of
+    ``{number, labels}`` items) that go straight into ``ctx.tool`` arguments."""
+    if isinstance(value, BaseModel):
+        return value.model_dump(mode="json")
+    if isinstance(value, dict):
+        return {k: jsonable(v) for k, v in value.items()}  # pyright: ignore[reportUnknownVariableType]
+    if isinstance(value, list | tuple):
+        return [jsonable(v) for v in value]  # pyright: ignore[reportUnknownVariableType]
+    return value
+
+
 class Context(Protocol):
     """What a program may do: call tools, ask for judgment, read the clock, log."""
 

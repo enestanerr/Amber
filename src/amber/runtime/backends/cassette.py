@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 
 from amber.compile.manifest import LlmStep, Manifest
 from amber.errors import AmberError
+from amber.runtime.program_api import jsonable
 from amber.trace.canonical import canonical_json, canonicalize_args
 from amber.trace.jsonpath import MISSING, get_path
 from amber.trace.models import ToolCall, Trace
@@ -150,6 +151,7 @@ class CassetteBackend:
 
     # -- Context -----------------------------------------------------------
     def tool(self, name: str, /, **args: Any) -> Any:
+        args = {k: jsonable(v) for k, v in args.items()}
         masked = canonicalize_args(args, self._volatile_for(self.pos))
         actual = (name, masked)
         if self.strict_order:

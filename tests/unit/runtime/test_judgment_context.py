@@ -55,3 +55,16 @@ def test_config_budgets_apply_at_run_time() -> None:
         40_000,
         900,
     )
+
+
+def test_jsonable_turns_nested_models_into_plain_json() -> None:
+    from pydantic import BaseModel
+
+    from amber.runtime.program_api import jsonable
+
+    class Update(BaseModel):
+        number: int
+        labels: list[str]
+
+    value = {"updates": [Update(number=7, labels=["area:api"])], "n": (1, 2)}
+    assert jsonable(value) == {"updates": [{"number": 7, "labels": ["area:api"]}], "n": [1, 2]}
