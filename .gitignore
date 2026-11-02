@@ -21,6 +21,7 @@ htmlcov/
 .amber/
 examples/*/.amber/
 examples/*/.outbox/
+examples/*/.scenario
 *.env
 .env.*
 

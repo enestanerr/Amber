@@ -1,0 +1,27 @@
+# Amber project for the weekly-report example. Mock servers only; all data is synthetic.
+[project]
+name = "weekly-report"
+
+[models]
+backend = "auto"                  # auto | anthropic | cli | recorded
+synthesis = "claude-sonnet-5-5"   # verify with `amber init --force` when an API key is set
+judgment = "claude-haiku-5-5"
+
+[servers.shop]
+command = "uv"
+args = ["run", "python", "server_shop.py"]
+
+[servers.slack]
+command = "uv"
+args = ["run", "python", "../_shared/server_slack.py"]
+
+[budgets]
+max_calls_factor = 2.0
+max_llm_tokens = 20000
+wall_clock_s = 600
+
+[guards]
+min_confidence = 0.5
+
+[fallback]
+daily_budget = 3

@@ -1,0 +1,6 @@
+{
+  "mcpServers": {
+    "shop": {"command": "uv", "args": ["run", "python", "server_shop.py"]},
+    "slack": {"command": "uv", "args": ["run", "python", "../_shared/server_slack.py"]}
+  }
+}

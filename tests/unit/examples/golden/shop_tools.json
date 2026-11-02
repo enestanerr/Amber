@@ -1,0 +1,53 @@
+[
+  {
+    "name": "list_customers",
+    "required": [],
+    "properties": [],
+    "read_only": true
+  },
+  {
+    "name": "list_orders",
+    "required": [
+      "since",
+      "until"
+    ],
+    "properties": [
+      "since",
+      "until"
+    ],
+    "read_only": true
+  },
+  {
+    "name": "rfm_snapshot",
+    "required": [
+      "as_of"
+    ],
+    "properties": [
+      "as_of"
+    ],
+    "read_only": true
+  },
+  {
+    "name": "top_products",
+    "required": [
+      "since",
+      "until"
+    ],
+    "properties": [
+      "n",
+      "since",
+      "until"
+    ],
+    "read_only": true
+  },
+  {
+    "name": "week_range",
+    "required": [
+      "week"
+    ],
+    "properties": [
+      "week"
+    ],
+    "read_only": true
+  }
+]
