@@ -681,6 +681,11 @@ on an input nobody recorded.
 21. Prompts that named an input (`product`) were rejected as unknown context keys.
 22. The CLI backend dropped a rejected first attempt's usage, and the CLI's cost was not recorded.
 
+23. Found by CI, not locally: `amber scheduler --once` (and `amber run`) resolved a model backend
+    before knowing one was needed, so a machine without the claude CLI or an API key failed with
+    "no model backend available". Both now resolve it optionally. The logged-in CLI on PATH had
+    hidden this, so the test fixture now hides a real `claude` for non-live tests.
+
 **Finding: price-watch's planned drift is absorbed.** @playwright/mcp's snapshot is an
 accessibility tree without CSS classes and `browser_evaluate` returns markdown text, so the
 `.price` → `.cost` rename changes nothing the program reads. Under scenario B it posted the

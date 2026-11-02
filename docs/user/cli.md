@@ -27,6 +27,7 @@ $ amber [OPTIONS] COMMAND [ARGS]...
 * `run`: Run the compiled program live against the...
 * `doctor`: Check live schemas, recent runs and...
 * `ui`: Start the read-mostly web panel over...
+* `bench`: Measure agent baseline vs compiled program...
 * `scheduler`: Foreground loop: run every due schedule...
 * `schedule`: Manage cron-style schedules for compiled...
 * `programs`: Inspect compiled program versions.
@@ -257,6 +258,27 @@ $ amber ui [OPTIONS]
 
 * `--port <int>`: Port on 127.0.0.1.  [default: 8787]
 * `--open`: Open the browser.
+* `--help`: Show this message and exit.
+
+## `amber bench`
+
+Measure agent baseline vs compiled program (writes bench/results.{json,md}).
+
+**Usage**:
+
+```console
+$ amber bench [OPTIONS] {example}
+```
+
+**Arguments**:
+
+* `example`: weekly-report | issue-triage | price-watch | all  [required]
+
+**Options**:
+
+* `--runs <int>`: Runs per side.  [default: 3]
+* `--baseline <str>`: record (fresh claude -p runs) or existing (recordings on disk).  [default: record]
+* `--offline`: Existing recordings and the recorded model backend.
 * `--help`: Show this message and exit.
 
 ## `amber scheduler`
