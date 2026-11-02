@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from amber.align.skeleton import build_skeleton
+from amber.trace.models import Trace
 from tests.unit.align.conftest import mk_trace
 
 
@@ -166,6 +167,39 @@ def test_conditional_step_without_separator_gets_gate() -> None:
     ]
     post = build_skeleton(traces).steps[1]
     assert post.conditional and post.predicate is not None and post.predicate.kind == "unknown"
+
+
+def _page_traces(posts: list[bool], snapshots: list[str]) -> list[Trace]:
+    out = []
+    for i, (post, snap) in enumerate(zip(posts, snapshots, strict=True)):
+        calls = [("web.snapshot", {}, snap)]
+        if post:
+            calls.append(
+                ("alerts.post", {"text": f"prices changed on day {i}, see list"}, {"ok": 1})
+            )
+        calls.append(("web.close", {}, None))
+        out.append(mk_trace(f"t{i}", calls))
+    return out
+
+
+def test_whole_page_text_never_becomes_a_predicate() -> None:
+    """A snapshot that differs per run "separates" any split; only a gate can decide."""
+    pages = [f"- listitem: Brass Lantern ${48 + i}.00 in stock: {12 - i} " * 4 for i in range(3)]
+    post = build_skeleton(_page_traces([False, True, True], pages)).steps[1]
+    assert post.conditional and post.predicate is not None and post.predicate.kind == "unknown"
+    # identical long text on the present side is content, not a flag
+    same = [pages[0], pages[1], pages[1]]
+    post = build_skeleton(_page_traces([False, True, True], same)).steps[1]
+    assert post.predicate is not None and post.predicate.kind == "unknown"
+
+
+def test_equality_predicate_needs_two_supporting_traces() -> None:
+    one_present = build_skeleton(_page_traces([True, False, False], ["a", "b", "c"])).steps[1]
+    assert one_present.predicate is not None and one_present.predicate.kind == "unknown"
+    flags = build_skeleton(_page_traces([True, True, False], ["changed", "changed", "same"]))
+    post = flags.steps[1]
+    assert post.predicate is not None and post.predicate.kind == "data"
+    assert (post.predicate.op, post.predicate.value) == ("==", "changed")
 
 
 def test_pruning_rules() -> None:

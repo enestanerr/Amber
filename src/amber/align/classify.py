@@ -151,6 +151,14 @@ def derive_predicate(step: StepSpec, steps: list[StepSpec], traces: dict[str, Tr
     return Predicate(kind="unknown")
 
 
+def _flag_like(value: Any) -> bool:
+    """Values a predicate may compare with ``==``/``!=``: booleans, numbers, short strings.
+    A page snapshot or a JSON blob "separates" runs by its whole content, which is no rule."""
+    if isinstance(value, bool | int | float):
+        return True
+    return isinstance(value, str) and len(value) <= INFERRED_MAX_CHARS
+
+
 def _separating_op(present: list[Any], absent: list[Any]) -> tuple[Any, Any] | None:
     def empty(v: Any) -> bool:
         return v in ("", [], {}, None)
@@ -159,7 +167,8 @@ def _separating_op(present: list[Any], absent: list[Any]) -> tuple[Any, Any] | N
         return "non-empty", None
     p_keys = {leaf_key(v) for v in present}
     a_keys = {leaf_key(v) for v in absent}
-    if len(p_keys) == 1 and not (p_keys & a_keys):
+    # an equality must be backed by two traces on its side: one trace equals itself trivially
+    if len(p_keys) == 1 and len(present) >= 2 and _flag_like(present[0]) and not (p_keys & a_keys):
         return "==", present[0]
     nums_p = [v for v in present if isinstance(v, int | float) and not isinstance(v, bool)]
     nums_a = [v for v in absent if isinstance(v, int | float) and not isinstance(v, bool)]
@@ -168,7 +177,7 @@ def _separating_op(present: list[Any], absent: list[Any]) -> tuple[Any, Any] | N
             return ">", max(nums_a)
         if max(nums_p) < min(nums_a):
             return "<", min(nums_a)
-    if len(a_keys) == 1 and not (p_keys & a_keys):
+    if len(a_keys) == 1 and len(absent) >= 2 and _flag_like(absent[0]) and not (p_keys & a_keys):
         return "!=", absent[0]
     return None
 
