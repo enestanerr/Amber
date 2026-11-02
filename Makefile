@@ -1,5 +1,5 @@
 # Amber — developer targets. Every target is a thin wrapper around `uv run`.
-.PHONY: setup test test-live lint fmt typecheck check demo drift heal bench ui clean
+.PHONY: setup test test-live lint fmt typecheck check demo demo-offline drift heal bench ui clean
 
 setup:            ## install everything (all extras) and the pre-commit hook
 	uv sync --all-extras
@@ -26,6 +26,9 @@ check: lint typecheck test   ## everything CI runs
 
 demo:             ## end-to-end on examples/weekly-report (record → align → compile → verify → run)
 	$(MAKE) -C examples/weekly-report demo
+
+demo-offline:     ## same pipeline on the synthetic fixture recordings with recorded model fills (no claude needed)
+	$(MAKE) -C examples/weekly-report demo-offline
 
 drift:            ## price-watch drift story: switch the site to scenario B
 	$(MAKE) -C examples/price-watch drift

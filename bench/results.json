@@ -1,0 +1,116 @@
+{
+  "results": [
+    {
+      "example": "weekly-report",
+      "agent_runs": 3,
+      "compiled_runs": 3,
+      "agent_input_tokens_median": 18085.0,
+      "agent_input_tokens_min": 18085.0,
+      "agent_input_tokens_max": 18122.0,
+      "compiled_llm_tokens_median": 1669.0,
+      "compiled_llm_tokens_min": 1626.0,
+      "compiled_llm_tokens_max": 1691.0,
+      "ratio": 10.835829838226482,
+      "agent_wall_s_median": 19.25,
+      "compiled_wall_s_median": 2.15,
+      "fidelity": 1.0,
+      "agent_turns": 0,
+      "statuses": [
+        "ok"
+      ]
+    }
+  ],
+  "raw": {
+    "weekly-report": {
+      "baseline": [
+        {
+          "trace_id": "t1",
+          "inputs": "week=2026-W42",
+          "input_tokens": 18085,
+          "output_tokens": 955,
+          "cost_usd": 0.031,
+          "duration_ms": 19250,
+          "num_turns": 6,
+          "calls": 5,
+          "call_sequence": [
+            "shop.week_range",
+            "shop.list_orders",
+            "shop.top_products",
+            "shop.rfm_snapshot",
+            "slack.post_message"
+          ]
+        },
+        {
+          "trace_id": "t2",
+          "inputs": "week=2026-W43",
+          "input_tokens": 18122,
+          "output_tokens": 966,
+          "cost_usd": 0.034,
+          "duration_ms": 19500,
+          "num_turns": 7,
+          "calls": 6,
+          "call_sequence": [
+            "shop.week_range",
+            "shop.list_orders",
+            "shop.top_products",
+            "shop.rfm_snapshot",
+            "builtin.Read",
+            "slack.post_message"
+          ]
+        },
+        {
+          "trace_id": "t3",
+          "inputs": "week=2026-W44",
+          "input_tokens": 18085,
+          "output_tokens": 955,
+          "cost_usd": 0.03,
+          "duration_ms": 19250,
+          "num_turns": 6,
+          "calls": 5,
+          "call_sequence": [
+            "shop.week_range",
+            "shop.list_orders",
+            "shop.top_products",
+            "shop.rfm_snapshot",
+            "slack.post_message"
+          ]
+        }
+      ],
+      "compiled": [
+        {
+          "run_id": "r_20261102_183827_571bfd",
+          "inputs": "week=2026-W42",
+          "status": "ok",
+          "llm_input_tokens": 1606,
+          "llm_output_tokens": 85,
+          "duration_ms": 2054,
+          "calls": 5,
+          "agent_turns": 0,
+          "fidelity": 1.0
+        },
+        {
+          "run_id": "r_20261102_183830_7bbef2",
+          "inputs": "week=2026-W43",
+          "status": "ok",
+          "llm_input_tokens": 1541,
+          "llm_output_tokens": 85,
+          "duration_ms": 2196,
+          "calls": 5,
+          "agent_turns": 0,
+          "fidelity": 1.0
+        },
+        {
+          "run_id": "r_20261102_183833_703429",
+          "inputs": "week=2026-W44",
+          "status": "ok",
+          "llm_input_tokens": 1584,
+          "llm_output_tokens": 85,
+          "duration_ms": 2150,
+          "calls": 5,
+          "agent_turns": 0,
+          "fidelity": 1.0
+        }
+      ]
+    }
+  }
+}

@@ -16,6 +16,7 @@ import typer
 
 from amber.cli import (
     align_cmd,
+    bench_cmd,
     compile_cmd,
     doctor_cmd,
     import_cmd,
@@ -91,6 +92,7 @@ app.command("verify")(verify_cmd.verify)
 app.command("run")(run_cmd.run)
 app.command("doctor")(doctor_cmd.doctor)
 app.command("ui")(ui_cmd.ui)
+app.command("bench")(bench_cmd.bench)
 app.add_typer(schedule_cmd.schedule_app, name="schedule")
 app.command("scheduler")(schedule_cmd.scheduler)
 app.add_typer(programs_cmd.programs_app, name="programs")
