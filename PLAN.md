@@ -238,29 +238,29 @@ uv run amber align weekly-report --json | python -c "import json,sys; s=json.loa
 **Read:** `docs/04-compiler.md` §B (program API), §C (codegen), §D (holes + synthesizer + repair loop).
 
 **Tasks**
-- [ ] `runtime/program_api.py`: `Context` protocol used by generated code: `ctx.tool(name,
+- [x] `runtime/program_api.py`: `Context` protocol used by generated code: `ctx.tool(name,
       **args) -> Any`, `ctx.llm(step_id, schema: type[BaseModel], prompt: str, context: dict)
       -> BaseModel`, `ctx.now() -> datetime`, `ctx.log(msg)`. `Program` metadata dataclass and
       the `@program(workflow=..., version=...)` decorator that registers the entry point and
       its `Inputs`/`Output` models for the runner and the panel.
-- [ ] `compile/manifest.py`: `Manifest` model (`workflow, version, created_at, source_traces[],
+- [x] `compile/manifest.py`: `Manifest` model (`workflow, version, created_at, source_traces[],
       skeleton_hash, tools[] (with schema hashes + effect), servers{}, inputs schema, output
       schema, llm_steps[] (id, schema, model hint), transforms[] (id, verified_on[]),
       volatile_paths, budgets (max_calls, max_llm_tokens), program_hash`).
-- [ ] `compile/codegen.py` + `templates/program.py.j2`, `templates/test_replay.py.j2`: emit
+- [x] `compile/codegen.py` + `templates/program.py.j2`, `templates/test_replay.py.j2`: emit
       `program.py` with `Inputs`, `Output`, one statement per skeleton step, `# AMBER-HOLE:<id>`
       stubs for transforms (`def transform_<id>(...)-> ...: raise NotImplementedError`) and
       judgment steps (`PROMPT_<id> = ...`, `class <Id>Out(BaseModel)`), conditional steps as
       `if predicate:`; emit `tests/test_replay.py` parametrized over source traces calling
       `amber.runtime.verify.replay(program, trace)`.
-- [ ] `compile/holes.py`: `Hole` kinds `transform` (signature from provenance: inputs are the
+- [x] `compile/holes.py`: `Hole` kinds `transform` (signature from provenance: inputs are the
       referenced results/inputs, expected outputs are the recorded leaf values per trace) and
       `judgment` (expected outputs per trace = the Unknown arg values; available context =
       results referenced by the text + preceding `Thought`s). Hole verification: a transform fill
       is accepted only if `fn(recorded_inputs) == recorded_outputs` for every trace (with
       numeric tolerance 1e-9); a judgment fill is accepted if the schema validates against every
       recorded value and the prompt is ≤ 1200 chars and references only available context keys.
-- [ ] `models/backend.py`: `ModelBackend` protocol `async complete(schema: type[T], system:
+- [x] `models/backend.py`: `ModelBackend` protocol `async complete(schema: type[T], system:
       str, user: str, *, model: str, max_tokens: int) -> tuple[T, Usage]`;
       `models/anthropic_api.py` (`client.messages.parse(..., output_format=schema)`);
       `models/claude_cli.py` (`claude -p --output-format json` + JSON extraction + Pydantic
@@ -268,7 +268,7 @@ uv run amber align weekly-report --json | python -c "import json,sys; s=json.loa
       one); `models/recorded.py` (fixtures for tests). Selection: `AMBER_MODEL_BACKEND` →
       `ANTHROPIC_API_KEY` present → `anthropic`; else `claude` on PATH → `cli`; else error with
       hint.
-- [ ] `compile/synthesizer.py`: fills holes with structured outputs (`TransformFill
+- [x] `compile/synthesizer.py`: fills holes with structured outputs (`TransformFill
       {python_source, rationale}`, `JudgmentFill {prompt, schema_fields[], rationale}`), runs
       hole verification, repair loop ≤ 3 iterations per hole feeding back the exact mismatch;
       on failure a transform hole is **downgraded to a judgment hole** (and a warning recorded);
@@ -276,9 +276,9 @@ uv run amber align weekly-report --json | python -c "import json,sys; s=json.loa
       executed in a restricted namespace (no imports except `math, datetime, statistics,
       re, json, itertools, collections`; AST check rejects `import`, `exec`, `eval`, `open`,
       dunder access).
-- [ ] Program versions: `programs/<workflow>/v<N>/{program.py, manifest.json, tests/
+- [x] Program versions: `programs/<workflow>/v<N>/{program.py, manifest.json, tests/
       test_replay.py, REPORT.md}`; `amber programs ls/show/diff`.
-- [ ] CLI `amber compile <workflow> [--refresh] [--max-repair 3] [--model ID] [--json]`;
+- [x] CLI `amber compile <workflow> [--refresh] [--max-repair 3] [--model ID] [--json]`;
       `--refresh` re-aligns with all traces including new (fallback) ones and bumps the
       version.
 

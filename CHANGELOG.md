@@ -8,6 +8,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Compile (P4): deterministic codegen (`program.py`, `manifest.json`, replay test, REPORT.md),
+  typed holes verified against recordings, structured-output synthesizer with repair loop and
+  transform→judgment downgrade, sandbox and lint, program versions, model backends
+  (anthropic / claude CLI / recorded); `amber compile`, `amber programs ls|show|diff`.
 - Align (P3): Needleman-Wunsch sequence alignment, provenance mining (Input / Ref /
   Template / Const / Unknown), step classification with hole kinds, conditional predicates,
   dead-step pruning, inferred inputs, volatile paths; `amber align <workflow> --show`.

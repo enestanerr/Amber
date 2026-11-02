@@ -258,3 +258,65 @@ Full suite: 147 passed, 1 skipped. ruff + pyright (strict for `trace/`, `align/`
 **Known limits (v0.1)**: a numeric arg that merely varies across traces is classified as a
 transform (per spec); if the synthesizer cannot derive it, P4 downgrades the hole to judgment.
 Loop/pagination collapsing is deferred to v0.2 (`repeated_call` warning only).
+
+## 2026-11-02 — P4 Compile
+
+**Decisions**: D3 (synthesis via `anthropic` `messages.parse` structured outputs; `cli` backend
+with `claude -p --json-schema` as the no-API-key fallback; `recorded` backend for tests),
+D4 (hybrid codegen: skeleton from code, model fills typed holes only), D13 (Python output).
+
+**Built**
+
+- `runtime/program_api.py`: `Context` protocol, `@program(workflow, version)` capturing the
+  `Inputs`/`Output` models, `load_program(path)`.
+- `compile/holes.py`: hole collection (`transform_step<i>` with params `inputs, r0..r<i-1>`;
+  `judgment_step<i>` with context keys = inputs + referenced/echoed/mentioned steps + earlier
+  `observe` steps; `gate_step<i>` for unknown predicates), examples ordered by trace, shrinking
+  (20 items / 500 chars / 8 KB), verification (transforms: sandboxed execution, numeric
+  tolerance 1e-9, order-insensitive list-of-dicts with a note; judgments: exact field set,
+  ≤ 1200 chars, only available context keys, no tool-name/trace-id leaks, schema validates every
+  recorded value), `downgrade_to_judgment`.
+- `compile/sandbox.py` (AST allow-list, curated builtins, restricted `__import__`, thread
+  timeout), `compile/lint.py` (generated-code rules), `compile/manifest.py` (`Manifest`,
+  genson result schemas, budgets = `max_calls_factor × max recorded calls`),
+  `compile/codegen.py` + Jinja templates (deterministic `program.py`, hoisted fill imports,
+  wrapped prompt literals, nested-arg reconstruction, f-string templates, conditional
+  `if`/gate blocks, `Output` from the final result's scalar keys + judgment text),
+  `compile/synthesizer.py` (structured `TransformFill`/`JudgmentFill`, repair loop with the
+  exact mismatch, transform → judgment downgrade, `CompileError` on judgment failure),
+  `compile/versions.py` (bump on skeleton change / `--refresh` / unusable previous),
+  `compile/report.py` (`REPORT.md`), `compile/compiler.py` (orchestration; the program is
+  imported once to put its JSON schemas into the manifest).
+- `models/`: `ModelBackend` protocol, `anthropic_api`, `claude_cli` (`--json-schema`,
+  one retry), `recorded` (fixtures keyed by `hole_id`/`step_id`, attempt-indexed), `select`.
+- CLI: `amber compile`, `amber programs ls|show|diff`.
+- Fixtures: `tests/fixtures/model_fills/{weekly-report,gate}.json`; golden
+  `tests/unit/compile/golden/weekly_report_v1.py` (regenerate with `pytest --update-golden`).
+- Tests: 55 (sandbox/lint, holes, codegen golden + a fake-context execution of the generated
+  program against recorded results, synthesizer repair/downgrade/failure, versions/manifest,
+  model backends, CLI).
+
+**Spec notes**: hole examples and `verified_on` follow the trace order, not the alignment
+anchor order; `context_keys` include all earlier `observe` steps (§A5) which is why the
+weekly-report judgment sees `r0..r3`. Predicate derivation prefers `==` / `>` / `<` over `!=`.
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run pytest -q tests/unit/compile
+40 passed   (+ models 5, CLI 4)
+
+$ AMBER_MODEL_BACKEND=recorded uv run amber compile weekly-report --json | python -c "..."   # scratch project
+ACCEPT compile: 1 2 ['transform_step3', 'judgment_step4']
+
+$ test -f programs/weekly-report/v1/program.py && python -c "import ast; ast.parse(open(...).read())"
+ACCEPT program parses
+
+$ AMBER_MODEL_BACKEND=recorded uv run amber compile weekly-report
+ hole             kind       step  attempts  result
+ transform_step3  transform     4         1  accepted
+ judgment_step4   judgment      5         1  accepted
+  holes filled 2/2 · usable: no — run `amber verify weekly-report`
+```
+
+Full suite: 202 passed, 1 skipped. ruff + pyright clean (strict for `compile/`).
