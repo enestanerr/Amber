@@ -17,7 +17,9 @@ args = ["run", "python", "../_shared/server_slack.py"]
 
 [budgets]
 max_calls_factor = 2.0
-max_llm_tokens = 20000
+# measured live (claude CLI, haiku, effort low): the summary judgment reads ~25 KB of JSON
+# (~21k input tokens) and thinks ~6k tokens while counting RFM segments
+max_llm_tokens = 40000
 wall_clock_s = 600
 
 [guards]
