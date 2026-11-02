@@ -200,3 +200,61 @@ Recorded weekly-report → t_20261102_165648_bc39fe  (success)
 ```
 
 Full suite: 111 passed, 1 skipped (live). ruff + pyright clean.
+
+## 2026-11-02 — P3 Align
+
+**Built** (`src/amber/align/`, pyright strict)
+
+- `sequence.py`: Needleman-Wunsch (`+2` tool match, `+1` fingerprint bonus, `-1`
+  mismatch/gap, diagonal-first ties, gap in the shorter sequence), progressive alignment
+  against the longest trace. Two additions over the spec text: a diagonal pair of *different*
+  tools is split into two columns (one mismatch scores better than two gaps, but a column must
+  hold one tool), and adjacent single-trace columns of the same tool are merged with a
+  `reordered_steps` warning (`A,B` vs `B,A` → two core columns, anchor order kept).
+  `repeated_call` warning for ≥ 3 consecutive same-tool columns.
+- `provenance.py`: Input → Ref (first column, shortest path) → Template (longest-first greedy
+  decomposition over inputs and earlier string/number leaves; ≥ 3 literal chars; re-rendered
+  and checked in every trace) → Const → Unknown (`large` ≥ 20 KB). Type-aware leaf equality
+  (numbers numeric, strings exact modulo trailing whitespace). Consistency rule: 2/3 → Unknown.
+- `classify.py`: per-Unknown-leaf hole kind (date/ISO → transform; ≥ 24 chars, enum-like with
+  repetition, decision cue, large → judgment; numbers/bools/structured → transform); short
+  free strings that vary are promoted to inferred inputs named from the arg key; optional steps
+  get a data predicate (`non-empty`, `==`, `!=`, `>`, `<` on an earlier core result leaf) or an
+  unknown gate.
+- `prune.py`: fixpoint dead-step elimination (read-only ∧ unreferenced ∧ optional ∧ not last,
+  plus all-error unreferenced calls); core unreferenced reads → `observe`; kept steps are
+  renumbered and refs remapped.
+- `skeleton.py` / `models.py`: `Skeleton`, `StepSpec` (adds `calls: trace_id → event idx` so
+  later phases can fetch recorded values), `Provenance` (adds `hole`), `Predicate`,
+  `InputSpec`; `context_hint` (referenced steps + steps whose result strings are echoed in the
+  judgment text or whose tool name is mentioned in the thoughts); generalized volatile paths
+  (`$[*].created_at`); stable 16-hex hash.
+- CLI `amber align <wf> [--show] [--json] [--keep-unreferenced] [--include-failed]` →
+  `.amber/build/<wf>/skeleton.json`. Failed traces are skipped by default; unknown-status
+  imports are kept with a warning.
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run pytest -q tests/unit/align
+31 passed  (+5 CLI tests in tests/unit/cli/test_align.py)
+
+$ uv run amber align weekly-report --show                 # scratch project with t1..t3
+Skeleton weekly-report  (3 traces · 5 steps · 1 judgment · 1 transform-needed · 1 pruned)
+1  shop.week_range     deterministic            week ← Input(week)                       3/3
+2  shop.list_orders    deterministic · observe  since ← Ref(0,$.start) · until ← Ref(0,$.end)
+3  shop.top_products   deterministic · observe  n ← Const(5) · since ← Ref(0,$.start) · until ← Ref(0,$.end)
+4  shop.rfm_snapshot   transform-needed · observe  as_of ← Unknown(transform)            3/3
+5  slack.post_message  judgment                 channel ← Const('#eng') · text ← Unknown(judgment)
+-  builtin.Read (pruned)                        read-only, unreferenced, present 1/3
+Inputs: week (string)   Volatile result paths: 15   Edges: 2
+
+$ uv run amber align weekly-report --json | python -c "...assert s['steps'] and s['inputs']"
+ACCEPT align json: 5 steps, ['week']
+```
+
+Full suite: 147 passed, 1 skipped. ruff + pyright (strict for `trace/`, `align/`) clean.
+
+**Known limits (v0.1)**: a numeric arg that merely varies across traces is classified as a
+transform (per spec); if the synthesizer cannot derive it, P4 downgrades the hole to judgment.
+Loop/pagination collapsing is deferred to v0.2 (`repeated_call` warning only).

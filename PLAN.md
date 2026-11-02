@@ -193,34 +193,34 @@ uv run python tests/integration/test_proxy_roundtrip.py      # prints OK and the
 **Read:** `docs/04-compiler.md` §A (alignment, provenance, classification, pruning).
 
 **Tasks**
-- [ ] `align/sequence.py`: Needleman–Wunsch global alignment of tool-call sequences; score =
+- [x] `align/sequence.py`: Needleman–Wunsch global alignment of tool-call sequences; score =
       `+2` same canonical tool name, `+1` bonus if `args_fingerprint` equal, `-1` mismatch,
       `-1` gap. Multi-trace: progressive alignment against the longest trace as the anchor.
       Output: columns, each a list of `(trace_id, call_idx | None)`.
-- [ ] `align/provenance.py`: for every leaf value in every call's args find provenance in
+- [x] `align/provenance.py`: for every leaf value in every call's args find provenance in
       priority order: `Input(name)` (declared `--input`), `Ref(step, path)` (equal leaf in an
       earlier result of the same trace), `Template(parts)` (string containing ≥1 Input/Ref
       value, with ≥3 literal chars between/around; produce an f-string template), `Const`
       (identical across all traces, no other provenance), `Unknown`. Consistency rule: a
       provenance is accepted for a step argument only if the same kind resolves in every
       trace where the step is present (otherwise `Unknown`).
-- [ ] `align/classify.py`: step kinds: `deterministic` (all leaves Input/Ref/Template/Const),
+- [x] `align/classify.py`: step kinds: `deterministic` (all leaves Input/Ref/Template/Const),
       `judgment` (≥1 `Unknown` leaf that is a string ≥ 24 chars or an enum-like short string
       that varies across traces, or the preceding `Thought` contains decision words — see
       spec heuristics), `transform-needed` (≥1 `Unknown` numeric/structured leaf or an
       `Unknown` that looks derived: date arithmetic, aggregates, joins). Optional steps (present
       in some traces) become `conditional` with `predicate: Unknown` unless a data predicate is
       derivable (same step present iff an earlier result leaf satisfies `==`/`>`/non-empty).
-- [ ] `align/prune.py`: dead-step elimination — a read-only step (MCP `readOnlyHint` true,
+- [x] `align/prune.py`: dead-step elimination — a read-only step (MCP `readOnlyHint` true,
       builtin `Read/Glob/Grep/WebFetch`, or name matching `get|list|search|read|fetch`) whose
       result has no downstream `Ref` and which is absent from ≥1 trace is pruned; keep a list
       `pruned_steps` for the report. `--keep-unreferenced` disables.
-- [ ] `align/skeleton.py`: `Skeleton` model (`workflow, traces, inputs (declared+inferred),
+- [x] `align/skeleton.py`: `Skeleton` model (`workflow, traces, inputs (declared+inferred),
       steps[], pruned_steps[], volatile_paths{}, warnings[]`). Inferred inputs: `Unknown`
       leaves in args that vary across traces but are short scalars → promoted to inputs named
       from their arg key (`since`, `until`, `week`). `volatile_paths`: result leaves that
       differ across traces with no downstream Ref (timestamps, ids) → masked during verify.
-- [ ] CLI `amber align <workflow> [--show] [--json] [--keep-unreferenced]` writes
+- [x] CLI `amber align <workflow> [--show] [--json] [--keep-unreferenced]` writes
       `.amber/build/<workflow>/skeleton.json` and prints the step table (idx, tool, kind,
       provenance summary, present-in N/M).
 

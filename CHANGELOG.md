@@ -8,6 +8,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Align (P3): Needleman-Wunsch sequence alignment, provenance mining (Input / Ref /
+  Template / Const / Unknown), step classification with hole kinds, conditional predicates,
+  dead-step pruning, inferred inputs, volatile paths; `amber align <workflow> --show`.
 - Recorders (P2): `amber record` wrapping `claude -p … --output-format stream-json`
   (flag injection, live step log, failure traces, denial warnings, schema enrichment via
   `--mcp`), `--from-stdin`, `--sdk` (Agent SDK extra), `amber import` for Claude Code
