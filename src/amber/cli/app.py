@@ -22,6 +22,8 @@ from amber.cli import (
     programs_cmd,
     proxy_cmd,
     record_cmd,
+    run_cmd,
+    schedule_cmd,
     traces_cmd,
     verify_cmd,
 )
@@ -84,6 +86,9 @@ app.command("proxy")(proxy_cmd.proxy)
 app.command("align")(align_cmd.align)
 app.command("compile")(compile_cmd.compile_)
 app.command("verify")(verify_cmd.verify)
+app.command("run")(run_cmd.run)
+app.add_typer(schedule_cmd.schedule_app, name="schedule")
+app.command("scheduler")(schedule_cmd.scheduler)
 app.add_typer(programs_cmd.programs_app, name="programs")
 app.add_typer(traces_cmd.traces_app, name="traces")
 
