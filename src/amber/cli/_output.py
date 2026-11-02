@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, NoReturn
 
 import typer
 from pydantic import BaseModel
@@ -74,6 +74,13 @@ def get_output(ctx: typer.Context, json_flag: bool) -> Output:
 def get_state(ctx: typer.Context) -> State:
     state = ctx.find_root().obj
     return state if isinstance(state, State) else State()
+
+
+def fail(err: AmberError) -> NoReturn:
+    """Render *err* and exit with its documented code (used by verify/run/doctor so the code
+    is visible to callers that invoke the Typer app directly, not only through ``main``)."""
+    render_error(err)
+    raise typer.Exit(err.exit_code)
 
 
 def render_error(err: AmberError) -> None:

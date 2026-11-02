@@ -23,6 +23,7 @@ from amber.cli import (
     proxy_cmd,
     record_cmd,
     traces_cmd,
+    verify_cmd,
 )
 from amber.cli._output import State, render_error
 from amber.errors import AmberError
@@ -82,6 +83,7 @@ app.command("import")(import_cmd.import_)
 app.command("proxy")(proxy_cmd.proxy)
 app.command("align")(align_cmd.align)
 app.command("compile")(compile_cmd.compile_)
+app.command("verify")(verify_cmd.verify)
 app.add_typer(programs_cmd.programs_app, name="programs")
 app.add_typer(traces_cmd.traces_app, name="traces")
 
