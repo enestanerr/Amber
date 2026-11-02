@@ -17,6 +17,7 @@ from typing import Any, cast
 from amber.adapters.mcp_proxy import tool_effect, tool_to_dict
 from amber.trace.models import ToolSchema, Trace
 from amber.util.logging import get_logger
+from amber.util.stdio import stdio_transport
 
 log = get_logger("adapters.enrich")
 
@@ -64,13 +65,15 @@ async def fetch_tool_schemas(
             if cfg.get("url"):
                 target: Any = str(cfg["url"])
             else:
-                target = StdioServerParameters(
-                    command=str(cfg["command"]),
-                    args=[str(a) for a in cfg.get("args") or []],
-                    env={
-                        **os.environ,
-                        **{str(k): str(v) for k, v in (cfg.get("env") or {}).items()},
-                    },
+                target = stdio_transport(
+                    StdioServerParameters(
+                        command=str(cfg["command"]),
+                        args=[str(a) for a in cfg.get("args") or []],
+                        env={
+                            **os.environ,
+                            **{str(k): str(v) for k, v in (cfg.get("env") or {}).items()},
+                        },
+                    )
                 )
             async with Client(target) as client:
                 res = await client.list_tools()

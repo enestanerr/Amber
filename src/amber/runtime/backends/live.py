@@ -18,6 +18,7 @@ from amber.errors import AmberError, ConfigError
 from amber.runtime.guards import GuardEvent
 from amber.trace.canonical import ResultKind, normalize_result, split_canonical
 from amber.trace.models import schema_hash
+from amber.util.stdio import stdio_transport
 
 TRANSIENT_PATTERNS = (
     "timeout",
@@ -88,7 +89,7 @@ class LiveBackend:
                     env={**os.environ, **cfg.env},
                     cwd=str(self.cwd) if self.cwd else None,
                 )
-                client = Client(params, read_timeout_seconds=self.read_timeout)
+                client = Client(stdio_transport(params), read_timeout_seconds=self.read_timeout)
             await client.__aenter__()
             self.clients[name] = client
             listing = await client.list_tools()

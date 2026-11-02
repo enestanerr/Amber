@@ -39,6 +39,7 @@ from amber.trace.models import Outcome, Status, ToolCall, ToolSchema, Trace, sch
 from amber.util.hashing import sha256_hex
 from amber.util.json import dumps_compact, loads, write_json
 from amber.util.logging import get_logger
+from amber.util.stdio import stdio_transport
 from amber.util.time import iso, new_id, utcnow
 
 log = get_logger("adapters.mcp_proxy")
@@ -149,7 +150,7 @@ async def run_proxy(
     params = StdioServerParameters(
         command=upstream[0], args=list(upstream[1:]), env={**os.environ, **(extra_env or {})}
     )
-    async with Client(params) as client:
+    async with Client(stdio_transport(params)) as client:
 
         async def refresh_tools() -> ListToolsResult:
             res = await client.list_tools()
