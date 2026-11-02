@@ -1,0 +1,7 @@
+# Keep LF everywhere: golden files, canonical JSON fixtures and generated programs
+# must be byte-identical across macOS, Linux and Windows checkouts.
+* text=auto eol=lf
+*.png binary
+*.gif binary
+*.mp4 binary
+*.db binary

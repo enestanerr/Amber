@@ -1,0 +1,127 @@
+[project]
+name = "amber-compiler"
+version = "0.1.0a0"
+description = "Compile recorded agent runs into neuro-symbolic programs with replay tests, guards and a drift loop."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+authors = [{ name = "Enes Taner" }]
+keywords = ["agents", "mcp", "claude", "compiler", "replay", "llm", "workflow"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Compilers",
+  "Topic :: Software Development :: Testing",
+  "Typing :: Typed",
+]
+dependencies = [
+  "typer>=0.27",
+  "rich>=14",
+  "pydantic>=2.14",
+  "mcp>=2.3,<3",
+  "anthropic>=2.3",
+  "jinja2>=3.1",
+  "genson>=1.3",
+  "httpx>=0.28",
+  "croniter>=6",
+  "anyio>=4",
+]
+
+[project.optional-dependencies]
+sdk = ["claude-agent-sdk>=0.2"]
+ui = ["fastapi>=0.120", "uvicorn>=0.35", "jinja2>=3.1", "pygments>=2.19"]
+dev = [
+  "pytest>=9",
+  "pytest-asyncio>=1.2",
+  "pytest-cov>=7",
+  "hypothesis>=6",
+  "ruff>=0.14",
+  "pyright>=1.1.400",
+  "playwright>=1.50",
+  "pre-commit>=4",
+]
+
+[project.urls]
+Homepage = "https://github.com/enestanerr/Amber"
+Repository = "https://github.com/enestanerr/Amber"
+Issues = "https://github.com/enestanerr/Amber/issues"
+Changelog = "https://github.com/enestanerr/Amber/blob/main/CHANGELOG.md"
+
+[project.scripts]
+amber = "amber.cli.app:main"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/amber"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/amber", "README.md", "LICENSE", "CHANGELOG.md", "pyproject.toml"]
+
+# --- ruff -------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = ["programs", "examples/*/programs", ".amber", "*.md", "docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = [
+  "RUF012", # mutable class attributes: pydantic/typer idioms
+  "SIM108", # ternary-vs-if is a readability call, not a rule
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["amber"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "RUF029"]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+
+# --- pyright ----------------------------------------------------------------
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+include = ["src", "tests"]
+exclude = ["**/__pycache__", ".venv", "programs", "examples/*/programs", ".amber"]
+strict = ["src/amber/trace", "src/amber/align", "src/amber/compile"]
+venvPath = "."
+venv = ".venv"
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+# --- pytest -----------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "live: needs model access (ANTHROPIC_API_KEY or a logged-in claude CLI); skipped unless selected with -m live",
+  "slow: slow tests",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+xfail_strict = true
+filterwarnings = ["error::DeprecationWarning:amber.*"]
+
+# --- coverage ---------------------------------------------------------------
+[tool.coverage.run]
+source = ["amber"]
+branch = true
+omit = ["*/ui/*", "*/templates/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_also = ["if TYPE_CHECKING:", "@overload", "raise NotImplementedError", '^\s*\.\.\.\s*$']
