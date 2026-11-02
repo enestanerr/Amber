@@ -479,8 +479,10 @@ uv run amber ui --port 8787 & sleep 2 && curl -s localhost:8787/ | grep -q "Prog
 - [x] `README.md` per the skeleton in `09-launch.md`: hero line, GIF, install, 6-command
       story, how it works (mermaid), measured table, what it can't do yet, related work, FAQ,
       contributing, license.
-- [ ] `scripts/demo_gif.sh`: `vhs` tape (or `asciinema` + `agg`) recording `make demo`
-      trimmed to ≤ 60 s; output `docs/assets/demo.gif` ≤ 8 MB.
+- [x] Demo: `scripts/demo.py` records a real weekly-report session (compile, live run, drift,
+      doctor, fallback, refresh) into `docs/assets/demo.cast` and renders an animated
+      `docs/assets/demo.svg` (55 s loop, 111 KB). *Changed from the vhs GIF: vhs and ffmpeg
+      are not available on the build machine and GitHub renders animated SVG.*
 - [x] Docs site pages (`docs/user/`): quickstart, concepts, CLI reference (generated from typer
       with `typer utils docs`), adapters, writing MCP servers Amber can compile, FAQ.
 - [ ] `CHANGELOG.md` v0.1.0; version bump; tag `v0.1.0`; TestPyPI dry run then PyPI via

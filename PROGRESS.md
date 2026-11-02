@@ -750,3 +750,35 @@ release.yml 41527017634: build success (uv build + wheel smoke), publish skipped
 gh release create v0.1.0: amber_compiler-0.1.0-py3-none-any.whl, amber_compiler-0.1.0.tar.gz
 https://github.com/enestanerr/Amber/releases/tag/v0.1.0
 ```
+
+## 2026-11-03 — Launch preparation (0.1.1)
+
+The repository went public. Built for the launch:
+
+- **Claude Code plugin.** `.claude-plugin/marketplace.json` makes the repository a plugin
+  marketplace; `plugins/amber` holds two skills, `/amber:compile` and `/amber:heal`.
+  `claude plugin validate .` and `claude plugin validate ./plugins/amber` pass; a one-session
+  load with `--plugin-dir` registered `amber:compile` and `amber:heal`.
+- **README** rewritten as a usage and Claude-integration guide, with absolute links so it also
+  renders on PyPI. The mermaid block failed on GitHub (`llm()` inside an unquoted label); the
+  diagram is now `docs/assets/how-it-works.svg`, checked in headless Chrome.
+- **Demo.** `scripts/demo.py record` ran the real story in a copy of weekly-report: compile → run
+  W40 (exit 0) → drift → run W41 (exit 4) → doctor (exit 5) → fallback (exit 0) → refresh → verify
+  4/4 → doctor healthy (exit 0), 142 s of output. `render` gives a 55 s animated SVG (111 KB);
+  frames at 12, 30, 48 and 53 s were checked as screenshots.
+- **Polish found while recording.** CLI messages printed absolute home-directory paths (now
+  relative); rich wrote no colour codes to Windows pipes under `FORCE_COLOR` (now ANSI); the
+  example scenario scripts printed absolute paths; the default `max_llm_tokens` became 40000.
+- **Checks.** Full git history scanned with gitleaks 8.30.1 (79 commits, no leaks);
+  `uvx --from git+https://github.com/enestanerr/Amber@v0.1.0 amber --version` → `amber 0.1.0`
+  from the public repository; PyPI name `amber-compiler` is free (404).
+
+```
+$ uv run pytest -q
+340 passed, 1 skipped
+$ uv run ruff check . && uv run ruff format --check . && uv run pyright
+All checks passed! · 173 files already formatted · 0 errors
+```
+
+Still with the maintainer: PyPI (trusted publisher + `PYPI_PUBLISH=true`), a 512 px plugin icon
+for Anthropic's plugin directory, and the launch posts.

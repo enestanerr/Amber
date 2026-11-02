@@ -7,6 +7,34 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-03
+
+Launch preparation: the repository is public.
+
+### Added
+- A Claude Code plugin marketplace in this repository. `/plugin install amber --marketplace
+  enestanerr/Amber` adds two skills: `/amber:compile` takes a repeated workflow from task prompt
+  to a scheduled, compiled program, and `/amber:heal` runs the doctor and the right repair.
+- The README is now a usage guide: install from GitHub, a two-minute offline demo, five ways to
+  use Amber with Claude (headless runs, interactive sessions, the Agent SDK, Claude Desktop through
+  the proxy, the plugin), a step-by-step guide, configuration, the safety model, commands and
+  troubleshooting.
+- An animated demo (`docs/assets/demo.svg`) recorded from a real session by `scripts/demo.py`,
+  which replaces the vhs tape; the raw asciicast is `docs/assets/demo.cast`.
+- The "How it works" diagram as an SVG: the README's mermaid block did not parse on GitHub
+  (`llm()` inside an unquoted label), and PyPI does not render mermaid at all.
+
+### Changed
+- The default `max_llm_tokens` is 40000 (was 20000): a first live judgment through the claude CLI
+  measured ~27k tokens.
+- CLI messages print paths relative to the working directory, not the user's home.
+- `FORCE_COLOR` produces ANSI colours on Windows pipes too (CI logs, recordings).
+- weekly-report's `make run` and `make heal` use weeks that have data (2026-W40, 2026-W41).
+- README images and links are absolute, so the page also renders on PyPI.
+
+### Fixed
+- The example scenario scripts printed absolute paths.
+
 ## [0.1.0] - 2026-11-02
 
 First release. Everything below was recorded, compiled, verified and run live with the
@@ -93,5 +121,6 @@ First release. Everything below was recorded, compiled, verified and run live wi
 - Project bootstrap (P0): packaging, CLI skeleton (`amber --version`, `amber init`), lint,
   type-check, test and CI configuration.
 
-[Unreleased]: https://github.com/enestanerr/Amber/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/enestanerr/Amber/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/enestanerr/Amber/releases/tag/v0.1.1
 [0.1.0]: https://github.com/enestanerr/Amber/releases/tag/v0.1.0
