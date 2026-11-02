@@ -14,7 +14,16 @@ from typing import Annotated
 
 import typer
 
-from amber.cli import align_cmd, import_cmd, init_cmd, proxy_cmd, record_cmd, traces_cmd
+from amber.cli import (
+    align_cmd,
+    compile_cmd,
+    import_cmd,
+    init_cmd,
+    programs_cmd,
+    proxy_cmd,
+    record_cmd,
+    traces_cmd,
+)
 from amber.cli._output import State, render_error
 from amber.errors import AmberError
 from amber.util.logging import setup_logging
@@ -72,6 +81,8 @@ app.command("record")(record_cmd.record)
 app.command("import")(import_cmd.import_)
 app.command("proxy")(proxy_cmd.proxy)
 app.command("align")(align_cmd.align)
+app.command("compile")(compile_cmd.compile_)
+app.add_typer(programs_cmd.programs_app, name="programs")
 app.add_typer(traces_cmd.traces_app, name="traces")
 
 
