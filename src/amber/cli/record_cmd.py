@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
 from pathlib import Path
 from typing import Annotated
@@ -10,6 +11,7 @@ from typing import Annotated
 import typer
 
 from amber.adapters.base import RecordRequest
+from amber.adapters.claude_cli_flags import passthrough_args
 from amber.adapters.claude_stream import StreamRecording, record_from_lines, run_claude
 from amber.adapters.enrich import apply_tool_schemas, fetch_tool_schemas
 from amber.cli._context import open_store
@@ -78,6 +80,9 @@ def record(
         if mcp is not None:
             rec.trace = _enrich(rec, mcp)
 
+    extra = passthrough_args(list(agent or [])) if not (from_stdin or sdk) else []
+    if extra:  # e.g. --model / --setting-sources: the fallback relaunches the agent with them
+        rec.trace.harness["agent_args"] = json.dumps(extra)
     if mcp is not None:
         rec.trace.harness["mcp_config"] = str(mcp.resolve())
     if allow:

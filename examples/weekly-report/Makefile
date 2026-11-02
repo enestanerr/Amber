@@ -1,6 +1,9 @@
 # weekly-report example — every target runs from this directory (its own Amber project).
 WF := weekly-report
 AMBER := uv run amber
+# explicit model for the recordings (never the user's default); --setting-sources user keeps
+# this repository's CLAUDE.md out of the agent's context
+AGENT_MODEL ?= claude-sonnet-5-5
 WEEKS := 2026-W42 2026-W43 2026-W44
 TASK := $(shell cat task.md)
 
@@ -9,7 +12,7 @@ TASK := $(shell cat task.md)
 record:           ## 3 live recordings with different inputs (needs the claude CLI logged in)
 	@for w in $(WEEKS); do \
 	  $(AMBER) record $(WF) --input week=$$w --mcp mcp.json --allow 'mcp__shop__*' --allow 'mcp__slack__*' \
-	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{week}/$$w/g" task.md)"; \
+	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{week}/$$w/g" task.md)" --model $(AGENT_MODEL) --setting-sources user; \
 	done
 
 align:            ## show the skeleton

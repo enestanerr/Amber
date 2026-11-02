@@ -153,6 +153,47 @@ def prepare_claude_argv(
     return PreparedCommand(argv=[command[0], *args], prompt=prompt)
 
 
+_MANAGED_FLAGS = frozenset(
+    {*PRINT, OUTPUT_FORMAT, VERBOSE, MCP_CONFIG, ALLOWED_TOOLS, "--allowed-tools", PERMISSION_MODE}
+)
+
+
+def passthrough_args(command: list[str]) -> list[str]:
+    """The user's own ``claude`` flags (e.g. ``--model``, ``--setting-sources``): everything after
+    the executable except the prompt positional and the flags the recorder manages itself. The
+    fallback relaunches the agent with these so it runs the way the recordings were made."""
+    if not command:
+        return []
+    args = list(command[1:])
+    positionals, _ = _scan(args)
+    prompt_idx = positionals[0] if positionals else -1
+    out: list[str] = []
+    i = 0
+    while i < len(args):
+        tok = args[i]
+        if i == prompt_idx:
+            i += 1
+            continue
+        if not (tok.startswith("-") and tok != "-"):
+            out.append(tok)
+            i += 1
+            continue
+        name, eq, _ = tok.partition("=")
+        span = [tok]
+        if not eq:
+            if name in _VARIADIC_FLAGS:
+                j = i + 1
+                while j < len(args) and not args[j].startswith("-"):
+                    span.append(args[j])
+                    j += 1
+            elif name not in _BOOLEAN_FLAGS and i + 1 < len(args):
+                span.append(args[i + 1])
+        if name not in _MANAGED_FLAGS:
+            out.extend(span)
+        i += len(span)
+    return out
+
+
 def inputs_suffix(inputs: dict[str, str]) -> str:
     """The line appended to the prompt so the agent sees the declared inputs."""
     if not inputs:

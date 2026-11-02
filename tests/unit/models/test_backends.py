@@ -84,18 +84,27 @@ async def test_cli_backend_parses_and_retries(monkeypatch: pytest.MonkeyPatch) -
         {"result": "garbage"},
         {"structured_output": {"text": "ok"}, "usage": {"input_tokens": 3, "output_tokens": 1}},
     ]
-    seen: list[list[str]] = []
+    seen: list[tuple[list[str], str]] = []
 
-    async def fake_run(argv: list[str]) -> dict[str, Any]:
-        seen.append(argv)
+    async def fake_run(argv: list[str], stdin: str = "") -> dict[str, Any]:
+        seen.append((argv, stdin))
+        system_file = Path(argv[argv.index("--system-prompt-file") + 1])
+        assert system_file.read_text(encoding="utf-8") == "sys"
         return payloads[len(seen) - 1]
 
     monkeypatch.setattr(backend, "_run", fake_run)
     out, usage = await backend.complete(Out, "sys", "user", model="claude-haiku-5-5", max_tokens=10)
     assert out.text == "ok" and usage.input_tokens == 3 and len(seen) == 2
-    assert "--json-schema" in seen[0] and "--output-format" in seen[0] and seen[0][1] == "user"
+    argv, stdin = seen[0]
+    assert stdin == "user" and argv[0] == "-p" and "user" not in argv
+    assert "--json-schema" in argv and "--output-format" in argv
+    # the CLI's own context is stripped and the structured answer needs two turns
+    assert argv[argv.index("--tools") + 1] == "" and argv[argv.index("--max-turns") + 1] == "2"
+    assert "--exclude-dynamic-system-prompt-sections" in argv and "--no-session-persistence" in argv
+    assert "--bare" not in argv  # --bare skips the claude.ai login
+    assert not Path(argv[argv.index("--system-prompt-file") + 1]).exists()  # cleaned up
 
-    async def always_bad(argv: list[str]) -> dict[str, Any]:
+    async def always_bad(argv: list[str], stdin: str = "") -> dict[str, Any]:
         return {"result": "nope"}
 
     monkeypatch.setattr(backend, "_run", always_bad)

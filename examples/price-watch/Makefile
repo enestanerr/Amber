@@ -1,6 +1,9 @@
 # price-watch example — run from this directory. Needs Node >= 18 for @playwright/mcp.
 WF := price-watch
 AMBER := uv run amber
+# explicit model for the recordings (never the user's default); --setting-sources user keeps
+# this repository's CLAUDE.md out of the agent's context
+AGENT_MODEL ?= claude-sonnet-5-5
 PRODUCTS := all lantern-brass all
 
 .PHONY: site serve record align compile verify run drift undrift heal demo clean
@@ -14,7 +17,7 @@ serve:            ## serve the static catalog on :8765 (keep running in another 
 record: site      ## 3 live recordings (needs the claude CLI logged in and `make serve` running)
 	@for p in $(PRODUCTS); do \
 	  $(AMBER) record $(WF) --input product=$$p --mcp mcp.json --allow 'mcp__playwright__*' --allow 'mcp__alerts__*' \
-	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{product}/$$p/g" task.md)"; \
+	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{product}/$$p/g" task.md)" --model $(AGENT_MODEL) --setting-sources user; \
 	done
 
 align:

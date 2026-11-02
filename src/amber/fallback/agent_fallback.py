@@ -7,6 +7,7 @@ This is the only module under ``fallback/`` that knows about Claude.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -88,9 +89,14 @@ def build_request(
         task_prompt=task_prompt,
         allow_writes=allow_writes,
     )
+    # relaunch with the flags the recordings were made with (model, setting sources, ...);
+    # never fall back to the user's default model silently when the recordings named one
+    extra: list[str] = json.loads(recording["agent_args"]) if recording.get("agent_args") else []
+    if "--model" not in extra and recording.get("model"):
+        extra += ["--model", recording["model"]]
     return RecordRequest(
         workflow=manifest.workflow,
-        agent_command=["claude", "-p", prompt],
+        agent_command=["claude", "-p", prompt, *extra],
         inputs={k: str(v) for k, v in inputs.items()},
         mcp_config=mcp_config,
         allow=allow,

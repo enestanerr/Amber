@@ -1,6 +1,9 @@
 # issue-triage example — run from this directory.
 WF := issue-triage
 AMBER := uv run amber
+# explicit model for the recordings (never the user's default); --setting-sources user keeps
+# this repository's CLAUDE.md out of the agent's context
+AGENT_MODEL ?= claude-sonnet-5-5
 DAYS := 2026-10-27 2026-10-28 2026-10-29
 
 .PHONY: record align compile verify run drift undrift heal demo clean
@@ -8,7 +11,7 @@ DAYS := 2026-10-27 2026-10-28 2026-10-29
 record:           ## 3 live recordings (needs the claude CLI logged in)
 	@for d in $(DAYS); do \
 	  $(AMBER) record $(WF) --input since=$$d --mcp mcp.json --allow 'mcp__github__*' --allow 'mcp__slack__*' \
-	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{since}/$$d/g" task.md)"; \
+	    --permission-mode acceptEdits -- claude -p "$$(sed "s/{since}/$$d/g" task.md)" --model $(AGENT_MODEL) --setting-sources user; \
 	done
 
 align:

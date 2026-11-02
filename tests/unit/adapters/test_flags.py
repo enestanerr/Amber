@@ -68,3 +68,18 @@ def test_non_claude_command_and_missing_prompt_rejected() -> None:
 
 def test_inputs_suffix_empty() -> None:
     assert inputs_suffix({}) == ""
+
+
+def test_passthrough_args_keeps_user_flags_and_drops_managed_ones() -> None:
+    from amber.adapters.claude_cli_flags import passthrough_args
+
+    cmd = [
+        "claude", "-p", "do the task", "--model", "claude-sonnet-5-5", "--setting-sources", "user",
+        "--output-format", "stream-json", "--verbose", "--mcp-config", "a.json", "b.json",
+        "--allowedTools", "mcp__x__*", "--permission-mode", "acceptEdits", "--max-turns=3",
+    ]  # fmt: skip
+    assert passthrough_args(cmd) == [
+        "--model", "claude-sonnet-5-5", "--setting-sources", "user", "--max-turns=3"
+    ]  # fmt: skip
+    assert passthrough_args(["claude", "-p", "just a prompt"]) == []
+    assert passthrough_args([]) == []

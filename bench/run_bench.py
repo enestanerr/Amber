@@ -79,17 +79,20 @@ def _trace_metrics(trace: dict[str, Any], inputs: str) -> dict[str, Any]:
     }
 
 
-def record_baseline(example: Path, name: str, runs: int) -> list[dict[str, Any]]:
+def record_baseline(example: Path, name: str, runs: int, agent_model: str) -> list[dict[str, Any]]:
     spec = EXAMPLES[name]
     template = (example / "task.md").read_text(encoding="utf-8")
     out: list[dict[str, Any]] = []
     for i in range(runs):
         value = spec["inputs"][i % len(spec["inputs"])]
         prompt = template.replace("{" + spec["key"] + "}", value.split("=", 1)[1])
+        # explicit --model: never fall back to the user's default (possibly expensive) model;
+        # --setting-sources user: the agent must not inherit this repository's CLAUDE.md
         args = [
             "uv", "run", "amber", "record", name, "--input", value, "--mcp", "mcp.json",
             "--tag", "bench", "--allow", "mcp__*", "--permission-mode", "acceptEdits",
-            "--json", "--", "claude", "-p", prompt,
+            "--json", "--", "claude", "-p", prompt, "--model", agent_model,
+            "--setting-sources", "user",
         ]  # fmt: skip
         out.append(_trace_metrics(sh(args, example), value))
     return out
@@ -182,7 +185,7 @@ def _claude_version() -> str:
     return proc.stdout.strip() or "not run"
 
 
-def render_md(rows: list[dict[str, Any]], *, offline: bool, command: str) -> str:
+def render_md(rows: list[dict[str, Any]], *, offline: bool, command: str, agent_model: str) -> str:
     toml = (REPO / "examples" / "weekly-report" / "amber.toml").read_text(encoding="utf-8")
     models = [
         line.split("#", 1)[0].strip()
@@ -205,6 +208,7 @@ def render_md(rows: list[dict[str, Any]], *, offline: bool, command: str) -> str
         f"- command: `{command}`",
         f"- claude CLI: {_claude_version()}",
         f"- models (amber.toml): {', '.join(models)}",
+        f"- agent model (baseline recordings): {agent_model}",
         f"- mode: {mode}",
         "",
         "| example | agent input tok (median) | compiled llm tok (median) | ratio | "
@@ -238,6 +242,11 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--all", action="store_true", help="all examples")
     parser.add_argument("--runs", type=int, default=3)
     parser.add_argument("--offline", action="store_true", help="existing recordings as baseline")
+    parser.add_argument(
+        "--agent-model",
+        default="claude-sonnet-5-5",
+        help="model for the baseline `claude -p` recordings (default: claude-sonnet-5-5)",
+    )
     args = parser.parse_args(argv)
     names = sorted(EXAMPLES) if args.all else ([args.example] if args.example else [])
     if not names:
@@ -257,7 +266,7 @@ def main(argv: list[str]) -> int:
         if args.offline:
             baseline = existing_baseline(example, name)
         else:
-            baseline = record_baseline(example, name, args.runs)
+            baseline = record_baseline(example, name, args.runs, args.agent_model)
             sh(["uv", "run", "amber", "compile", name, "--json"], example)
         compiled = compiled_runs(example, name, args.runs, baseline, env)
         raw[name] = {"baseline": baseline, "compiled": compiled}
@@ -275,7 +284,9 @@ def main(argv: list[str]) -> int:
     )
     command = "uv run python bench/run_bench.py " + " ".join(argv)
     (out_dir / "results.md").write_text(
-        render_md(results, offline=args.offline, command=command), encoding="utf-8", newline="\n"
+        render_md(results, offline=args.offline, command=command, agent_model=args.agent_model),
+        encoding="utf-8",
+        newline="\n",
     )
     print(f"wrote {out_dir / 'results.md'}")
     return 0
