@@ -15,6 +15,7 @@ from amber.compile.compiler import CompileResult, compile_workflow
 from amber.errors import AmberError
 from amber.models.backend import ModelBackend
 from amber.models.select import resolve_backend
+from amber.util.paths import display_path
 
 
 def compile_(
@@ -73,7 +74,8 @@ def compile_(
 
 
 def render(result: CompileResult) -> Table:
-    table = Table(title=f"compile {result.workflow} → v{result.version}  ({result.path})", box=None)
+    where = display_path(result.path)
+    table = Table(title=f"compile {result.workflow} → v{result.version}  ({where})", box=None)
     table.add_column("hole")
     table.add_column("kind")
     table.add_column("step", justify="right")

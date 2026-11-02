@@ -46,7 +46,8 @@ class ServerCfg(_Strict):
 
 class BudgetsCfg(_Strict):
     max_calls_factor: float = 2.0
-    max_llm_tokens: int = 20_000
+    # measured: one judgment over ~25 KB of JSON through the claude CLI is ~27k tokens
+    max_llm_tokens: int = 40_000
     wall_clock_s: int = 600
 
 

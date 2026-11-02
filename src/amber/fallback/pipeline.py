@@ -24,7 +24,7 @@ from amber.runtime.ledger import Ledger
 from amber.runtime.runner import RunResult, run_program
 from amber.trace.models import ToolCall
 from amber.trace.store import TraceStore
-from amber.util.paths import amber_home
+from amber.util.paths import amber_home, display_path
 from amber.util.time import utcnow
 
 Recorder = Callable[..., Coroutine[Any, Any, StreamRecording]]
@@ -155,7 +155,7 @@ def decide_and_act(
     )
     out.print(
         f"  fallback trace [bold]{rec.trace.id}[/] saved "
-        f"({len(rec.trace.calls)} calls, {turns} agent turns) → {path}"
+        f"({len(rec.trace.calls)} calls, {turns} agent turns) → {display_path(path)}"
     )
     out.print(
         f"  next: `amber compile {manifest.workflow} --refresh` to fold it into a new version"

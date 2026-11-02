@@ -44,3 +44,16 @@ def amber_home(root: Path) -> Path:
 def programs_dir(root: Path) -> Path:
     """Where compiled program versions are written (committed by the user, not runtime state)."""
     return root / PROGRAMS_DIRNAME
+
+
+def display_path(path: Path | str, base: Path | None = None) -> str:
+    """*path* relative to *base* (default: the cwd) when it lies inside it, else unchanged.
+
+    Messages stay short and do not print the user's home directory (it would end up in
+    screenshots and demo recordings).
+    """
+    p = Path(path)
+    try:
+        return p.resolve().relative_to((base or Path.cwd()).resolve()).as_posix()
+    except (ValueError, OSError):
+        return str(p)

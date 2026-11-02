@@ -14,7 +14,7 @@ from amber.cli._output import JsonOpt, get_output, stderr
 from amber.errors import AmberError
 from amber.trace.models import Trace
 from amber.util.json import write_json
-from amber.util.paths import amber_home
+from amber.util.paths import amber_home, display_path
 
 
 def select_traces(traces: list[Trace], *, include_failed: bool, warnings: list[str]) -> list[Trace]:
@@ -68,7 +68,7 @@ def align(
         out.print(footer(skeleton))
     for w in skeleton.warnings:
         stderr.print(f"[yellow]warning:[/] {w}")
-    out.print(f"[dim]wrote {path}[/]")
+    out.print(f"[dim]wrote {display_path(path)}[/]")
 
 
 def summary_line(s: Skeleton) -> str:

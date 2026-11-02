@@ -19,6 +19,7 @@ from amber.cli._inputs import parse_inputs, parse_status
 from amber.cli._output import JsonOpt, get_output, stderr
 from amber.trace.jsonpath import iter_leaves
 from amber.trace.models import ToolCall, Trace
+from amber.util.paths import display_path
 
 
 def record(
@@ -103,7 +104,7 @@ def record(
             )
         if rec.stderr_tail and rec.trace.outcome.status == "failure":
             stderr.print("[dim]claude stderr (tail):[/]\n" + rec.stderr_tail)
-        out.print(f"[dim]saved {path}[/]")
+        out.print(f"[dim]saved {display_path(path)}[/]")
     if rec.trace.outcome.status == "failure":
         raise typer.Exit(1)
 

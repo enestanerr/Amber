@@ -101,6 +101,6 @@ def test_build_manifest(weekly_skeleton: Skeleton, weekly_traces: list[Trace]) -
     assert orders is not None and orders.schema_hash
     assert orders.input_schema["required"] == ["since", "until"]
     assert m.result_schemas[0]["required"] == ["end", "start"]
-    assert m.budgets.max_calls == 12 and m.budgets.max_llm_tokens == 20000
+    assert m.budgets.max_calls == 12 and m.budgets.max_llm_tokens == 40000
     assert m.volatile_paths[1] and m.usable is False and m.warnings == ["w"]
     assert Manifest.model_validate(m.model_dump(mode="json")) == m

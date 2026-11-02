@@ -15,6 +15,7 @@ from amber.cli._inputs import parse_inputs, parse_status
 from amber.cli._output import JsonOpt, get_output, stderr
 from amber.cli.record_cmd import render_summary
 from amber.errors import UsageError
+from amber.util.paths import display_path
 
 
 def import_(
@@ -78,4 +79,4 @@ def import_(
     out.print(render_summary(trace))
     for w in warnings:
         stderr.print(f"[yellow]warning:[/] {w}")
-    out.print(f"[dim]saved {saved}[/]")
+    out.print(f"[dim]saved {display_path(saved)}[/]")
