@@ -448,16 +448,16 @@ cd examples/price-watch && make demo && make drift && make heal    # heal = run 
 **Read:** `docs/07-panel.md`.
 
 **Tasks**
-- [ ] `ui/app.py` (FastAPI) + Jinja templates + vendored `htmx.min.js`; `amber ui [--port 8787]
+- [x] `ui/app.py` (FastAPI) + Jinja templates + vendored `htmx.min.js`; `amber ui [--port 8787]
       [--open]`. Read-only against `.amber/amber.db` and `programs/`.
-- [ ] Pages: Programs (versions, source traces, steps by kind), Program detail (step table,
+- [x] Pages: Programs (versions, source traces, steps by kind), Program detail (step table,
       manifest, REPORT), Runs (list with status/tokens/cost/duration, filter by workflow), Run
       detail (step timeline, guard events, llm calls), Doctor (latest diagnosis per workflow,
       button `Run doctor` → POST), Decisions (ledger).
-- [ ] Charts: server-rendered inline SVG: tokens per run (agent baseline vs compiled), guard
+- [x] Charts: server-rendered inline SVG: tokens per run (agent baseline vs compiled), guard
       events over time. Palette and mark rules from the spec (bars ≤ 24 px, 4 px radius on the
       data end only, hairline grid, legend when ≥ 2 series, table twin under each chart).
-- [ ] Dark/light via `prefers-color-scheme`; no external CDN requests.
+- [x] Dark/light via `prefers-color-scheme`; no external CDN requests.
 
 **Acceptance**
 ```bash

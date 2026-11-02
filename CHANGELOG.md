@@ -8,6 +8,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Web panel (P9): `amber ui` — overview with token-savings tiles and charts, programs and
+  versions (highlighted program.py, manifest, REPORT), runs with step timelines, doctor
+  (run from the page), decisions ledger, trace viewer, JSON API twins.
 - Doctor + fallback (P7): `amber doctor` (live schema/server probe, result-shape and guard
   statistics, llm health, staleness, program lint → healthy/degraded/broken with a
   recommendation, exit 5), and the fallback loop behind `amber run --fallback agent`

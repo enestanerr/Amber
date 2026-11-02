@@ -528,3 +528,40 @@ for Playwright). weekly-report's `make demo-offline` covers the compile → veri
 offline; its live `make demo` is wired the same way.
 
 Full suite: 282 passed, 1 skipped. ruff + pyright clean.
+
+## 2026-11-02 — P9 Web panel
+
+**Decisions**: D10 (FastAPI + Jinja2 + vendored htmx 2.0.4, server-rendered SVG; no Node build,
+no CDN; binds 127.0.0.1, no auth).
+
+**Built**
+
+- `ui/app.py` (`create_app(root)`, `run_ui`): pages `/`, `/programs`, `/programs/{wf}`,
+  `/programs/{wf}/v{n}` (steps, llm steps, transforms, manifest, pygments-highlighted
+  `program.py`, REPORT.md), `/runs[?workflow=]`, `/runs/{id}` (step timeline, guard events,
+  llm calls, decisions), `/doctor/{wf}` (GET shows the session's last diagnosis; POST runs the
+  doctor and returns the `_doctor_result.html` fragment via htmx; `?probe=0` skips the server
+  probe), `/decisions[?workflow=]`, `/traces/{id}`; JSON twins under `/api/*` built from the
+  `ui/models.py` Pydantic models.
+- `ui/data.py` (`Panel`): overview per workflow (latest version, usable, runs in 7 d, stop rate,
+  tokens saved = median agent `total_input` of the source traces × runs − compiled llm tokens),
+  chart rows; `ui/charts.py`: tokens-per-run grouped bars with the dashed agent baseline and
+  guard-events stacked bars (≤ 24 px bars, 4 px radius on the data end, 12 %-opacity grid,
+  `<title>`/`<desc>`, colours from CSS classes so light/dark follow `prefers-color-scheme`);
+  every chart has a `<details>` table twin. `static/app.css` is 60 lines.
+- CLI `amber ui [--port 8787] [--open]` (lazy import with a hint for the `[ui]` extra).
+- Tests (`tests/unit/ui/test_routes.py`): every route 200 and mentions the workflow, 404s,
+  static assets, API twins validate against the models, doctor POST fragment, SVG parses.
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run pytest -q tests/unit/ui
+14 passed
+
+$ uv run amber ui --port 8787 & sleep 2 && curl -s localhost:8787/ | grep -q "Programs" && kill %1
+ACCEPT: panel serves / with the Programs nav          # run through a child-process helper on Windows
+api/overview: [{"agent_median_tokens": 18085, "latest_version": 1, "runs_7d": 0, ...}]
+```
+
+Full suite: 296 passed, 1 skipped. ruff + pyright clean.

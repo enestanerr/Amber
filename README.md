@@ -24,7 +24,8 @@ control back to the agent and recompiles.
 | P6 Run — live MCP backend, builtins, guards, ledger, `amber run` (0 agent turns), scheduler | done |
 | P8 Examples — weekly-report, issue-triage, price-watch (mock servers, scenarios, Makefiles); live demos need `claude` | done offline |
 | P7 Doctor + fallback — `amber doctor` (exit 5), `amber run --fallback agent`, recompile with resumed traces | done |
-| P9, P10 | not started |
+| P9 Web panel — `amber ui` (FastAPI + htmx, SVG charts, JSON API) | done |
+| P10 Bench, README, GIF, release | in progress |
 
 ## Install (development)
 
