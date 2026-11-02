@@ -130,6 +130,11 @@ class Ledger:
             )
         )
 
+    def set_agent_turns(self, run_id: str, turns: int) -> None:
+        self.db.write(
+            lambda c: c.execute("UPDATE runs SET agent_turns = ? WHERE id = ?", (turns, run_id))
+        )
+
     def add_step(
         self,
         run_id: str,

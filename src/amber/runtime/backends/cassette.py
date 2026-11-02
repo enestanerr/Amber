@@ -114,15 +114,29 @@ class CassetteBackend:
         if self.manifest is None:
             return []
         # positions map 1:1 to kept steps when the trace is a source trace
-        prefix = len(self.trace.prefix_calls)
+        prefix = len(self._prefix())
         step_idx = position - prefix if position >= prefix else -1
         if step_idx < 0:
             return []
         return list(self.manifest.volatile_paths.get(step_idx, []))
 
+    def _prefix(self) -> list[ToolCall]:
+        """``prefix_calls`` unless they were already spliced into the events (fallback traces)."""
+        prefix = self.trace.prefix_calls
+        head = self.trace.calls[: len(prefix)]
+        if (
+            prefix
+            and len(head) == len(prefix)
+            and all(
+                h.tool == p.tool and h.args == p.args for h, p in zip(head, prefix, strict=True)
+            )
+        ):
+            return []
+        return list(prefix)
+
     def _build_expected(self) -> list[ExpectedCall]:
         out: list[ExpectedCall] = []
-        for call in [*self.trace.prefix_calls, *self._kept_calls()]:
+        for call in [*self._prefix(), *self._kept_calls()]:
             position = len(out)
             out.append(
                 ExpectedCall(

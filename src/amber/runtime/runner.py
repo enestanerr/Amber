@@ -31,7 +31,7 @@ from amber.runtime.judgment import judge
 from amber.runtime.ledger import Ledger
 from amber.runtime.program_api import Program, load_program
 from amber.trace.canonical import split_canonical
-from amber.trace.models import Usage
+from amber.trace.models import ToolCall, Usage
 from amber.util.hashing import digest
 from amber.util.logging import get_logger
 from amber.util.paths import amber_home
@@ -71,6 +71,8 @@ class RunResult:
     output: dict[str, Any] | None = None
     guard_events: list[GuardEvent] = field(default_factory=list[GuardEvent])
     step_log: list[StepLog] = field(default_factory=list[StepLog])
+    completed_calls: list[ToolCall] = field(default_factory=list[ToolCall])  # for fallback resume
+    inputs: dict[str, Any] = field(default_factory=dict[str, Any])
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -127,6 +129,7 @@ class LiveContext:
         self.llm_calls = 0
         self.usage = Usage()
         self.step_log: list[StepLog] = []
+        self.completed_calls: list[ToolCall] = []
 
     # -- plumbing -------------------------------------------------------------
     def _submit(self, coro: Any) -> Any:
@@ -192,6 +195,17 @@ class LiveContext:
             result_digest=digest(outcome.value), duration_ms=outcome.duration_ms, status="ok",
         )  # fmt: skip
         self._emit(StepLog(step_idx, name, "ok", outcome.duration_ms))
+        self.completed_calls.append(
+            ToolCall(
+                idx=len(self.completed_calls),
+                call_id=f"{self.run_id}_{step_idx}",
+                tool=name,
+                args=dict(args),
+                result=outcome.value,
+                result_kind=outcome.kind,
+                duration_ms=outcome.duration_ms,
+            )
+        )
         return outcome.value
 
     async def _call_with_retry(self, step_idx: int, name: str, args: dict[str, Any]) -> CallOutcome:
@@ -393,4 +407,5 @@ def run_program(
         llm_output_tokens=usage.output_tokens, cost_usd=None, duration_ms=duration_ms,
         stop_kind=stop_kind, stop_detail=stop_detail, error=error, output=output,
         guard_events=list(guards.events), step_log=list(ctx.step_log) if ctx else [],
+        completed_calls=list(ctx.completed_calls) if ctx else [], inputs=dict(raw_inputs),
     )  # fmt: skip

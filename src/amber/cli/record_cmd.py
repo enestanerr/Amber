@@ -78,6 +78,12 @@ def record(
         if mcp is not None:
             rec.trace = _enrich(rec, mcp)
 
+    if mcp is not None:
+        rec.trace.harness["mcp_config"] = str(mcp.resolve())
+    if allow:
+        rec.trace.harness["allow"] = ",".join(allow)
+    if permission_mode:
+        rec.trace.harness["permission_mode"] = permission_mode
     path = store.save(rec.trace)
     if out.json_mode:
         out.json(rec.trace)

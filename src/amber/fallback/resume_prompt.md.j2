@@ -1,0 +1,9 @@
+You are resuming an automated workflow "{{ workflow }}" that was compiled from your earlier runs.
+Inputs: {{ inputs_json }}
+Completed steps and their results (do not redo them):
+{% for s in completed %}- {{ s.idx }} {{ s.tool }}({{ s.args_preview }}) → {{ s.result_preview }}
+{% endfor %}Step {{ step_idx }} `{{ tool }}` could not be completed: {{ stop_detail }}
+Continue from that step and finish the task: {{ task_prompt }}
+Use only the tools provided. When done, state the final result in one paragraph.
+{% if not allow_writes %}Do not perform any action that writes or sends anything; describe what you would send instead.
+{% endif %}

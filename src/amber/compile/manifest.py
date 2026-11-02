@@ -185,7 +185,7 @@ def build_manifest(
     max_recorded = max((len(t.calls) for t in traces), default=0)
     recording: dict[str, str] = {}
     for trace in reversed(traces):
-        for key in ("mcp_config", "allow", "model"):
+        for key in ("mcp_config", "allow", "permission_mode", "model"):
             if key in trace.harness and key not in recording:
                 recording[key] = trace.harness[key]
     return Manifest(

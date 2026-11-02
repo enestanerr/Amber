@@ -81,6 +81,7 @@ def run(
             inputs=parse_inputs(input_ or []),
             allow_writes=allow_writes,
             out=out,
+            llm_backend=backend,
         )
     if out.json_mode:
         out.json(result.to_json())
