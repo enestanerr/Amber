@@ -1,0 +1,28 @@
+# Amber project for the price-watch example: Playwright MCP (needs Node >= 18) against a local
+# static site served by `make serve`; alerts go to the shared Slack mock.
+[project]
+name = "price-watch"
+
+[models]
+backend = "auto"
+synthesis = "claude-sonnet-5-5"
+judgment = "claude-haiku-5-5"
+
+[servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest", "--headless"]
+
+[servers.alerts]
+command = "uv"
+args = ["run", "python", "../_shared/server_slack.py"]
+
+[budgets]
+max_calls_factor = 2.0
+max_llm_tokens = 20000
+wall_clock_s = 600
+
+[guards]
+min_confidence = 0.5
+
+[fallback]
+daily_budget = 3

@@ -1,0 +1,26 @@
+{
+  "lantern-brass": {
+    "price": 48.0,
+    "stock": 12
+  },
+  "lantern-copper": {
+    "price": 32.5,
+    "stock": 4
+  },
+  "torch-iron": {
+    "price": 27.0,
+    "stock": 20
+  },
+  "lamp-storm": {
+    "price": 54.0,
+    "stock": 0
+  },
+  "lantern-tin": {
+    "price": 14.0,
+    "stock": 35
+  },
+  "stand-oak": {
+    "price": 39.0,
+    "stock": 7
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "mcpServers": {
+    "playwright": {"command": "npx", "args": ["-y", "@playwright/mcp@latest", "--headless"]},
+    "alerts": {"command": "uv", "args": ["run", "python", "../_shared/server_slack.py"]}
+  }
+}

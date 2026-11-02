@@ -1,0 +1,37 @@
+[
+  {
+    "name": "add_comment",
+    "required": [
+      "number",
+      "body"
+    ],
+    "read_only": false
+  },
+  {
+    "name": "add_labels",
+    "required": [
+      "number",
+      "labels"
+    ],
+    "read_only": false
+  },
+  {
+    "name": "get_issue",
+    "required": [
+      "number"
+    ],
+    "read_only": true
+  },
+  {
+    "name": "list_issues",
+    "required": [],
+    "read_only": true
+  },
+  {
+    "name": "search_issues",
+    "required": [
+      "query"
+    ],
+    "read_only": true
+  }
+]

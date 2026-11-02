@@ -1,0 +1,27 @@
+# Amber project for the issue-triage example. Mock servers only; all data is synthetic.
+[project]
+name = "issue-triage"
+
+[models]
+backend = "auto"
+synthesis = "claude-sonnet-5-5"
+judgment = "claude-haiku-5-5"
+
+[servers.github]
+command = "uv"
+args = ["run", "python", "server_github.py"]
+
+[servers.slack]
+command = "uv"
+args = ["run", "python", "../_shared/server_slack.py"]
+
+[budgets]
+max_calls_factor = 2.0
+max_llm_tokens = 40000
+wall_clock_s = 600
+
+[guards]
+min_confidence = 0.5
+
+[fallback]
+daily_budget = 3
