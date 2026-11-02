@@ -1,114 +1,576 @@
 {
   "results": [
     {
-      "example": "weekly-report",
+      "example": "issue-triage",
       "agent_runs": 3,
       "compiled_runs": 3,
-      "agent_input_tokens_median": 18085.0,
-      "agent_input_tokens_min": 18085.0,
-      "agent_input_tokens_max": 18122.0,
-      "compiled_llm_tokens_median": 1669.0,
-      "compiled_llm_tokens_min": 1626.0,
-      "compiled_llm_tokens_max": 1691.0,
-      "ratio": 10.835829838226482,
-      "agent_wall_s_median": 19.25,
-      "compiled_wall_s_median": 2.15,
-      "fidelity": 1.0,
+      "agent_tokens": [
+        153944.0,
+        152975.0,
+        160124.0
+      ],
+      "compiled_tokens": [
+        11892.0,
+        11601.0,
+        12423.0
+      ],
+      "ratio": 12.945173225697948,
+      "agent_cost_usd": 0.08664649999999999,
+      "compiled_cost_usd": 0.00271452,
+      "agent_wall_s": 15.346,
+      "compiled_wall_s": 10.319,
+      "llm_calls": 1,
+      "fidelity_exact": 0.6666666666666666,
+      "fidelity_core": 1.0,
       "agent_turns": 0,
       "statuses": [
         "ok"
+      ],
+      "agent_models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "example": "price-watch",
+      "agent_runs": 3,
+      "compiled_runs": 3,
+      "agent_tokens": [
+        165225.0,
+        109602.0,
+        165685.0
+      ],
+      "compiled_tokens": [
+        14862.0,
+        7307.0,
+        14889.0
+      ],
+      "ratio": 11.117278966491725,
+      "agent_cost_usd": 0.07091299999999999,
+      "compiled_cost_usd": 0.0029874000000000003,
+      "agent_wall_s": 21.517,
+      "compiled_wall_s": 11.402,
+      "llm_calls": 2,
+      "fidelity_exact": 1.0,
+      "fidelity_core": 1.0,
+      "agent_turns": 0,
+      "statuses": [
+        "ok"
+      ],
+      "agent_models": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "example": "weekly-report",
+      "agent_runs": 3,
+      "compiled_runs": 3,
+      "agent_tokens": [
+        174076.0,
+        172742.0,
+        177469.0
+      ],
+      "compiled_tokens": [
+        29472.0,
+        27498.0,
+        30648.0
+      ],
+      "ratio": 5.906487513572204,
+      "agent_cost_usd": 0.1696201,
+      "compiled_cost_usd": 0.00832634,
+      "agent_wall_s": 28.851,
+      "compiled_wall_s": 33.608,
+      "llm_calls": 1,
+      "fidelity_exact": 0.0,
+      "fidelity_core": 1.0,
+      "agent_turns": 0,
+      "statuses": [
+        "ok"
+      ],
+      "agent_models": [
+        "claude-sonnet-5-5"
       ]
     }
   ],
   "raw": {
-    "weekly-report": {
+    "issue-triage": {
       "baseline": [
         {
-          "trace_id": "t1",
-          "inputs": "week=2026-W42",
-          "input_tokens": 18085,
-          "output_tokens": 955,
-          "cost_usd": 0.031,
-          "duration_ms": 19250,
-          "num_turns": 6,
-          "calls": 5,
-          "call_sequence": [
-            "shop.week_range",
-            "shop.list_orders",
-            "shop.top_products",
-            "shop.rfm_snapshot",
-            "slack.post_message"
-          ]
-        },
-        {
-          "trace_id": "t2",
-          "inputs": "week=2026-W43",
-          "input_tokens": 18122,
-          "output_tokens": 966,
-          "cost_usd": 0.034,
-          "duration_ms": 19500,
+          "trace_id": "t_20261102_201417_6ff410",
+          "inputs": "since=2026-10-27",
+          "scenario": "A",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 158397,
+          "output_tokens": 1727,
+          "cost_usd": 0.09781400000000001,
+          "duration_ms": 15346,
           "num_turns": 7,
-          "calls": 6,
-          "call_sequence": [
-            "shop.week_range",
-            "shop.list_orders",
-            "shop.top_products",
-            "shop.rfm_snapshot",
-            "builtin.Read",
-            "slack.post_message"
-          ]
-        },
-        {
-          "trace_id": "t3",
-          "inputs": "week=2026-W44",
-          "input_tokens": 18085,
-          "output_tokens": 955,
-          "cost_usd": 0.03,
-          "duration_ms": 19250,
-          "num_turns": 6,
           "calls": 5,
           "call_sequence": [
-            "shop.week_range",
-            "shop.list_orders",
-            "shop.top_products",
-            "shop.rfm_snapshot",
+            "github.list_issues",
+            "github.list_issues",
+            "github.add_labels",
+            "github.add_comments",
             "slack.post_message"
-          ]
+          ],
+          "event_tools": {
+            "1": "github.list_issues",
+            "2": "github.list_issues",
+            "3": "github.add_labels",
+            "4": "github.add_comments",
+            "5": "slack.post_message"
+          }
+        },
+        {
+          "trace_id": "t_20261102_201456_3f6a21",
+          "inputs": "since=2026-10-29",
+          "scenario": "A",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 152503,
+          "output_tokens": 1441,
+          "cost_usd": 0.08664649999999999,
+          "duration_ms": 30936,
+          "num_turns": 6,
+          "calls": 4,
+          "call_sequence": [
+            "github.list_issues",
+            "github.add_labels",
+            "github.add_comments",
+            "slack.post_message"
+          ],
+          "event_tools": {
+            "1": "github.list_issues",
+            "2": "github.add_labels",
+            "3": "github.add_comments",
+            "4": "slack.post_message"
+          }
+        },
+        {
+          "trace_id": "t_20261102_201518_4d108f",
+          "inputs": "since=2026-10-30",
+          "scenario": "A",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 151693,
+          "output_tokens": 1282,
+          "cost_usd": 0.08376650000000001,
+          "duration_ms": 14641,
+          "num_turns": 6,
+          "calls": 4,
+          "call_sequence": [
+            "github.list_issues",
+            "github.add_labels",
+            "github.add_comments",
+            "slack.post_message"
+          ],
+          "event_tools": {
+            "1": "github.list_issues",
+            "2": "github.add_labels",
+            "3": "github.add_comments",
+            "4": "slack.post_message"
+          }
         }
       ],
       "compiled": [
         {
-          "run_id": "r_20261102_183827_571bfd",
+          "run_id": "r_20261102_204723_1a1266",
+          "version": 1,
+          "inputs": "since=2026-10-27",
+          "scenario": "A",
+          "status": "ok",
+          "stop": null,
+          "llm_calls": 1,
+          "llm_input_tokens": 10358,
+          "llm_output_tokens": 2065,
+          "cost_usd": 0.0029800200000000003,
+          "duration_ms": 12494,
+          "calls": 4,
+          "agent_turns": 0,
+          "sequence": [
+            "github.list_issues",
+            "github.add_labels",
+            "github.add_comments",
+            "slack.post_message"
+          ],
+          "fidelity_exact": 0.0,
+          "fidelity_core": 1.0
+        },
+        {
+          "run_id": "r_20261102_204736_be330b",
+          "version": 1,
+          "inputs": "since=2026-10-29",
+          "scenario": "A",
+          "status": "ok",
+          "stop": null,
+          "llm_calls": 1,
+          "llm_input_tokens": 10358,
+          "llm_output_tokens": 1534,
+          "cost_usd": 0.00271452,
+          "duration_ms": 10319,
+          "calls": 4,
+          "agent_turns": 0,
+          "sequence": [
+            "github.list_issues",
+            "github.add_labels",
+            "github.add_comments",
+            "slack.post_message"
+          ],
+          "fidelity_exact": 1.0,
+          "fidelity_core": 1.0
+        },
+        {
+          "run_id": "r_20261102_204747_b6cdf0",
+          "version": 1,
+          "inputs": "since=2026-10-30",
+          "scenario": "A",
+          "status": "ok",
+          "stop": null,
+          "llm_calls": 1,
+          "llm_input_tokens": 10358,
+          "llm_output_tokens": 1243,
+          "cost_usd": 0.0025690200000000004,
+          "duration_ms": 8611,
+          "calls": 4,
+          "agent_turns": 0,
+          "sequence": [
+            "github.list_issues",
+            "github.add_labels",
+            "github.add_comments",
+            "slack.post_message"
+          ],
+          "fidelity_exact": 1.0,
+          "fidelity_core": 1.0
+        }
+      ]
+    },
+    "price-watch": {
+      "baseline": [
+        {
+          "trace_id": "t_20261102_202812_b32c37",
+          "inputs": "product=all",
+          "scenario": "A",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 108996,
+          "output_tokens": 606,
+          "cost_usd": 0.06340029999999999,
+          "duration_ms": 8715,
+          "num_turns": 6,
+          "calls": 4,
+          "call_sequence": [
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot"
+          ],
+          "event_tools": {
+            "1": "playwright.browser_navigate",
+            "2": "playwright.browser_snapshot",
+            "3": "playwright.browser_navigate",
+            "4": "playwright.browser_snapshot"
+          }
+        },
+        {
+          "trace_id": "t_20261102_202845_c01bab",
+          "inputs": "product=all",
+          "scenario": "A2",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 164511,
+          "output_tokens": 714,
+          "cost_usd": 0.07091299999999999,
+          "duration_ms": 24992,
+          "num_turns": 7,
+          "calls": 5,
+          "call_sequence": [
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "alerts.post_message"
+          ],
+          "event_tools": {
+            "1": "playwright.browser_navigate",
+            "2": "playwright.browser_snapshot",
+            "3": "playwright.browser_navigate",
+            "4": "playwright.browser_snapshot",
+            "5": "alerts.post_message"
+          }
+        },
+        {
+          "trace_id": "t_20261102_202916_ba1bcf",
+          "inputs": "product=lantern-brass",
+          "scenario": "A2",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 164733,
+          "output_tokens": 952,
+          "cost_usd": 0.073986,
+          "duration_ms": 21517,
+          "num_turns": 7,
+          "calls": 5,
+          "call_sequence": [
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "alerts.post_message"
+          ],
+          "event_tools": {
+            "1": "playwright.browser_navigate",
+            "2": "playwright.browser_snapshot",
+            "3": "playwright.browser_navigate",
+            "4": "playwright.browser_snapshot",
+            "5": "alerts.post_message"
+          }
+        }
+      ],
+      "compiled": [
+        {
+          "run_id": "r_20261102_204758_c86497",
+          "version": 2,
+          "inputs": "product=all",
+          "scenario": "A",
+          "status": "ok",
+          "stop": null,
+          "llm_calls": 1,
+          "llm_input_tokens": 7012,
+          "llm_output_tokens": 295,
+          "cost_usd": 0.0014195500000000001,
+          "duration_ms": 7692,
+          "calls": 4,
+          "agent_turns": 0,
+          "sequence": [
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot"
+          ],
+          "fidelity_exact": 1.0,
+          "fidelity_core": 1.0
+        },
+        {
+          "run_id": "r_20261102_204807_bdad91",
+          "version": 2,
+          "inputs": "product=all",
+          "scenario": "A2",
+          "status": "ok",
+          "stop": null,
+          "llm_calls": 2,
+          "llm_input_tokens": 13971,
+          "llm_output_tokens": 918,
+          "cost_usd": 0.0030039000000000003,
+          "duration_ms": 11402,
+          "calls": 5,
+          "agent_turns": 0,
+          "sequence": [
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "alerts.post_message"
+          ],
+          "fidelity_exact": 1.0,
+          "fidelity_core": 1.0
+        },
+        {
+          "run_id": "r_20261102_204819_5cd6d9",
+          "version": 2,
+          "inputs": "product=lantern-brass",
+          "scenario": "A2",
+          "status": "ok",
+          "stop": null,
+          "llm_calls": 2,
+          "llm_input_tokens": 13981,
+          "llm_output_tokens": 881,
+          "cost_usd": 0.0029874000000000003,
+          "duration_ms": 11865,
+          "calls": 5,
+          "agent_turns": 0,
+          "sequence": [
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "playwright.browser_navigate",
+            "playwright.browser_snapshot",
+            "alerts.post_message"
+          ],
+          "fidelity_exact": 1.0,
+          "fidelity_core": 1.0
+        }
+      ]
+    },
+    "weekly-report": {
+      "baseline": [
+        {
+          "trace_id": "t_20261102_193532_f72fc9",
           "inputs": "week=2026-W42",
-          "status": "ok",
-          "llm_input_tokens": 1606,
-          "llm_output_tokens": 85,
-          "duration_ms": 2054,
-          "calls": 5,
-          "agent_turns": 0,
-          "fidelity": 1.0
+          "scenario": "A",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 169396,
+          "output_tokens": 4680,
+          "cost_usd": 0.1696201,
+          "duration_ms": 28851,
+          "num_turns": 10,
+          "calls": 8,
+          "call_sequence": [
+            "shop.week_range",
+            "shop.week_range",
+            "slack.list_channels",
+            "shop.list_orders",
+            "shop.rfm_snapshot",
+            "shop.rfm_snapshot",
+            "shop.top_products",
+            "slack.post_message"
+          ],
+          "event_tools": {
+            "1": "shop.week_range",
+            "2": "shop.week_range",
+            "3": "slack.list_channels",
+            "4": "shop.list_orders",
+            "5": "shop.rfm_snapshot",
+            "6": "shop.rfm_snapshot",
+            "7": "shop.top_products",
+            "8": "slack.post_message"
+          }
         },
         {
-          "run_id": "r_20261102_183830_7bbef2",
+          "trace_id": "t_20261102_193603_4cb6ac",
           "inputs": "week=2026-W43",
-          "status": "ok",
-          "llm_input_tokens": 1541,
-          "llm_output_tokens": 85,
-          "duration_ms": 2196,
-          "calls": 5,
-          "agent_turns": 0,
-          "fidelity": 1.0
+          "scenario": "A",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 168598,
+          "output_tokens": 4144,
+          "cost_usd": 0.16170380000000004,
+          "duration_ms": 26782,
+          "num_turns": 10,
+          "calls": 8,
+          "call_sequence": [
+            "shop.week_range",
+            "shop.week_range",
+            "shop.list_orders",
+            "shop.rfm_snapshot",
+            "shop.rfm_snapshot",
+            "shop.top_products",
+            "slack.list_channels",
+            "slack.post_message"
+          ],
+          "event_tools": {
+            "1": "shop.week_range",
+            "2": "shop.week_range",
+            "3": "shop.list_orders",
+            "4": "shop.rfm_snapshot",
+            "5": "shop.rfm_snapshot",
+            "6": "shop.top_products",
+            "7": "slack.list_channels",
+            "8": "slack.post_message"
+          }
         },
         {
-          "run_id": "r_20261102_183833_703429",
+          "trace_id": "t_20261102_193656_20fb93",
           "inputs": "week=2026-W44",
+          "scenario": "A",
+          "agent_model": "claude-sonnet-5-5",
+          "input_tokens": 171409,
+          "output_tokens": 6060,
+          "cost_usd": 0.1901773,
+          "duration_ms": 49041,
+          "num_turns": 10,
+          "calls": 8,
+          "call_sequence": [
+            "shop.week_range",
+            "shop.week_range",
+            "slack.list_channels",
+            "shop.list_orders",
+            "shop.rfm_snapshot",
+            "shop.rfm_snapshot",
+            "shop.top_products",
+            "slack.post_message"
+          ],
+          "event_tools": {
+            "1": "shop.week_range",
+            "2": "shop.week_range",
+            "3": "slack.list_channels",
+            "4": "shop.list_orders",
+            "5": "shop.rfm_snapshot",
+            "6": "shop.rfm_snapshot",
+            "7": "shop.top_products",
+            "8": "slack.post_message"
+          }
+        }
+      ],
+      "compiled": [
+        {
+          "run_id": "r_20261102_204834_7d557e",
+          "version": 2,
+          "inputs": "week=2026-W42",
+          "scenario": "A",
           "status": "ok",
-          "llm_input_tokens": 1584,
-          "llm_output_tokens": 85,
-          "duration_ms": 2150,
-          "calls": 5,
+          "stop": null,
+          "llm_calls": 1,
+          "llm_input_tokens": 20938,
+          "llm_output_tokens": 8534,
+          "cost_usd": 0.00832634,
+          "duration_ms": 33608,
+          "calls": 7,
           "agent_turns": 0,
-          "fidelity": 1.0
+          "sequence": [
+            "shop.week_range",
+            "shop.week_range",
+            "shop.list_orders",
+            "shop.rfm_snapshot",
+            "shop.rfm_snapshot",
+            "shop.top_products",
+            "slack.post_message"
+          ],
+          "fidelity_exact": 0.0,
+          "fidelity_core": 1.0
+        },
+        {
+          "run_id": "r_20261102_204908_ff80c6",
+          "version": 2,
+          "inputs": "week=2026-W43",
+          "scenario": "A",
+          "status": "ok",
+          "stop": null,
+          "llm_calls": 1,
+          "llm_input_tokens": 20854,
+          "llm_output_tokens": 6644,
+          "cost_usd": 0.00736454,
+          "duration_ms": 25275,
+          "calls": 7,
+          "agent_turns": 0,
+          "sequence": [
+            "shop.week_range",
+            "shop.week_range",
+            "shop.list_orders",
+            "shop.rfm_snapshot",
+            "shop.rfm_snapshot",
+            "shop.top_products",
+            "slack.post_message"
+          ],
+          "fidelity_exact": 0.0,
+          "fidelity_core": 1.0
+        },
+        {
+          "run_id": "r_20261102_204934_949f57",
+          "version": 2,
+          "inputs": "week=2026-W44",
+          "scenario": "A",
+          "status": "ok",
+          "stop": null,
+          "llm_calls": 1,
+          "llm_input_tokens": 21262,
+          "llm_output_tokens": 9386,
+          "cost_usd": 0.008817140000000001,
+          "duration_ms": 34151,
+          "calls": 7,
+          "agent_turns": 0,
+          "sequence": [
+            "shop.week_range",
+            "shop.week_range",
+            "shop.list_orders",
+            "shop.rfm_snapshot",
+            "shop.rfm_snapshot",
+            "shop.top_products",
+            "slack.post_message"
+          ],
+          "fidelity_exact": 0.0,
+          "fidelity_core": 1.0
         }
       ]
     }
