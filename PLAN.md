@@ -106,22 +106,22 @@ uv run pytest -q                                      # 1 smoke test passes
 **Read:** `docs/02-trace-format.md` (all), `docs/01-architecture.md` §Storage.
 
 **Tasks**
-- [ ] `src/amber/trace/models.py`: `Trace`, `ToolSchema`, `ToolCall`, `Thought`, `Note`,
+- [x] `src/amber/trace/models.py`: `Trace`, `ToolSchema`, `ToolCall`, `Thought`, `Note`,
       `Outcome`, `Usage` exactly as specified (Pydantic, `extra="forbid"`, `schema_version = 1`).
-- [ ] `src/amber/trace/canonical.py`: `canonical_tool_name(server, tool)`,
+- [x] `src/amber/trace/canonical.py`: `canonical_tool_name(server, tool)`,
       `canonicalize_args(args, volatile_paths)`, `args_fingerprint(args)` (sha256 of canonical
       JSON), `normalize_result(result)` (MCP content blocks → JSON | text), JSON-path utilities
       (`iter_leaves`, `get_path`, `set_path`). Property tests with `hypothesis`: canonical form
       is idempotent and order-insensitive for dict keys.
-- [ ] `src/amber/trace/store.py`: `TraceStore(root=".amber")` with `save(trace)`,
+- [x] `src/amber/trace/store.py`: `TraceStore(root=".amber")` with `save(trace)`,
       `load(trace_id)`, `list(workflow=None)`, `delete(trace_id)`, `latest(workflow)`. Traces as
       `.amber/traces/<workflow>/<trace_id>.json`; index table `traces` in `.amber/amber.db`
       (SQLite WAL, `PRAGMA journal_mode=WAL`, single writer helper `Db.write()` with a
       process-level lock file).
-- [ ] Tool schema fingerprint: `ToolSchema.hash = sha256(canonical(input_schema))[:16]`.
-- [ ] CLI: `amber traces ls [workflow] [--json]`, `amber traces show <id> [--json]`,
+- [x] Tool schema fingerprint: `ToolSchema.hash = sha256(canonical(input_schema))[:16]`.
+- [x] CLI: `amber traces ls [workflow] [--json]`, `amber traces show <id> [--json]`,
       `amber traces rm <id>`.
-- [ ] Fixtures: `tests/fixtures/traces/weekly-report/{t1,t2,t3}.json` hand-written minimal
+- [x] Fixtures: `tests/fixtures/traces/weekly-report/{t1,t2,t3}.json` hand-written minimal
       traces (3 steps, one judgment) used by P3–P5 tests.
 
 **Acceptance**

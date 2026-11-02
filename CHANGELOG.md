@@ -8,6 +8,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Trace model and store (P1): canonical `Trace` models, JSON-path utilities,
+  canonicalization (`canonicalize_args`, `args_fingerprint`, `normalize_result`), JSON +
+  SQLite `TraceStore`, `amber traces ls|show|rm`, seeded weekly-report fixtures.
 - Project bootstrap (P0): packaging, CLI skeleton (`amber --version`, `amber init`), lint,
   type-check, test and CI configuration.
 

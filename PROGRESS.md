@@ -88,3 +88,53 @@ $ uv run pytest -q
 - `amber init` was run in a scratch directory, not at the repository root: the root is the
   Amber source tree, each `examples/<name>/` becomes its own project root in P8.
 - `release.yml` needs the PyPI Trusted Publisher configured before the first tag.
+
+## 2026-11-02 — P1 Trace model + store
+
+**Decisions**: D7 (SQLite + JSON files; files are the source of truth, SQLite is an index that
+`TraceStore.sync()` reconciles so hand-copied traces are picked up).
+
+**Placement note (harness-agnostic rule)**: `trace/canonical.py` only knows the generic
+`server.tool` form and a builtin-effect table keyed by bare tool names. Parsing Claude's
+`mcp__<server>__<tool>` names lives in `adapters/claude_messages.py` (P2), so nothing under
+`trace/` mentions Claude.
+
+**Built**
+
+- `trace/models.py`: `Usage`, `ToolSchema` (canonical + hash auto-filled, hash checked),
+  `ToolCall`, `Thought`, `Note`, `Outcome`, `Trace` (invariants in `check()`, also run on
+  validation). All `extra="forbid"`.
+- `trace/jsonpath.py`: `$.a.b`, `$.a[0]`, `$.a[*]`, `["k.ey"]`; `parse_path`, `format_path`,
+  `iter_leaves`, `get_path` (`MISSING` sentinel), `expand_wildcards`, `set_path`.
+- `trace/canonical.py`: `canonical_tool_name`, `split_canonical`, `builtin_effect`,
+  `canonical_json`, `canonicalize_args` (trailing-whitespace strip + `<volatile>` masking),
+  `args_fingerprint`, `normalize_result` (string / block list / `structuredContent` /
+  attribute objects / blobs → `{"$blob": …}` with an optional sink).
+- `util/db.py`: `Db` (WAL, `busy_timeout`, `write(fn)` under a `fcntl`/`msvcrt` lock file,
+  `BEGIN IMMEDIATE … COMMIT`, rollback on error). `trace/store.py`: `TraceStore`
+  (`save/load/list/latest/delete/sync/load_all`, `TraceSummary` = index row).
+- CLI: `amber traces ls [workflow] [--json]`, `amber traces show <id> [--json|--full]`,
+  `amber traces rm <id>`.
+- Fixtures: `tests/fixtures/gen_weekly_report.py` (seeded, fictional Northwind Lanterns Co.)
+  writes `tests/fixtures/traces/weekly-report/{t1,t2,t3,t_broken}.json`. t2 has one
+  exploratory `builtin.Read` (pruned in P3); `shop.rfm_snapshot(as_of=<day before start>)` is
+  the transform-needed step; `slack.post_message.text` is the judgment; `t_broken` swaps
+  steps 2/3 and adds `shop.list_customers`.
+- Tests: 52 in `tests/unit/trace` (hypothesis: canonical JSON idempotent and key-order
+  insensitive; `canonicalize_args` idempotent), 5 in `tests/unit/cli/test_traces.py`.
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run pytest -q tests/unit/trace
+52 passed in 1.32s
+
+$ uv run amber traces ls --json | python -c "import json,sys; json.load(sys.stdin)"   # scratch project with t1..t3 copied in
+ACCEPT: json ok, 3 traces
+
+$ uv run amber traces show t2
+t2 · weekly-report · claude-stream  … 8 rows (2 thoughts, 6 calls incl. builtin.Read)
+outcome: success · calls 6 · tokens in 18,122 (cached 12,000) · out 966 · $0.034 · 19.5 s
+```
+
+Coverage (`--cov=amber.trace`): canonical 98 % · jsonpath 91 % · models 94 % · store 98 %.
