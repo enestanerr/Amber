@@ -211,8 +211,9 @@ This repository is a Claude Code plugin marketplace. Install the Amber plugin on
 /plugin install amber --marketplace enestanerr/Amber
 ```
 
-(On Claude Code before 2.1.275: `/plugin marketplace add enestanerr/Amber`, then
-`/plugin install amber@amber-compiler`.) It adds two skills:
+From a terminal it is `claude plugin install amber --marketplace enestanerr/Amber`. On Claude
+Code before 2.1.275, add the marketplace first (`/plugin marketplace add enestanerr/Amber`), then
+`/plugin install amber@amber-compiler`. It adds two skills:
 
 | skill | what Claude Code does with it |
 |---|---|
@@ -224,11 +225,23 @@ stopped, fix it"*. The skills load from their descriptions.
 
 ### Run compiled programs anywhere
 
-A compiled program is a CLI call, so Claude Code (through Bash), cron or CI can run it:
+A compiled program is a CLI call, so Claude Code (through Bash), a script, cron or CI can run it:
 
 ```bash
-amber run weekly-report --input week=2026-W45 --allow-writes
-amber schedule add weekly-report --cron "0 9 * * 1" --input week=2026-W45 && amber scheduler
+amber run weekly-report --input week=2026-W40 --allow-writes
+```
+
+For inputs that never change, Amber's own scheduler is enough:
+
+```bash
+amber schedule add price-watch --cron "0 9 * * *" --input product=all && amber scheduler
+```
+
+Schedules store fixed inputs. For a date-relative input such as "last week", let cron compute it
+(`%` is escaped in crontab):
+
+```text
+0 9 * * 1  cd ~/weekly-report && amber run weekly-report --input week=$(date -d 'last week' +\%G-W\%V) --allow-writes
 ```
 
 ## Compile your own workflow, step by step
@@ -421,6 +434,7 @@ read_roots = ["./data"]         # where the compiled Read/Glob/Grep builtins may
 
 - Loop and pagination collapsing (per-item calls into `for` loops with per-item holes)
 - Recorders for the OpenAI Agents SDK and OpenTelemetry GenAI spans
+- Schedules with computed inputs ("last week", "yesterday"); today a schedule stores fixed inputs
 - An approval step for writes, and a hosted runner
 - TypeScript program output
 - Idea: expose compiled programs to Claude Code as MCP tools, so the agent can call a compiled

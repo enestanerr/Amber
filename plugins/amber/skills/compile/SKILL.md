@@ -111,8 +111,8 @@ amber verify <workflow>               # exit 3 if any recording diverges
 ## 7. Run it (writes only with consent)
 
 ```bash
-amber run <workflow> --input week=2026-W45                  # write tools dry-run
-amber run <workflow> --input week=2026-W45 --allow-writes   # only after the user says yes
+amber run <workflow> --input <name>=<value>                  # write tools dry-run
+amber run <workflow> --input <name>=<value> --allow-writes   # only after the user says yes
 ```
 
 Report the step log, tokens, agent turns (should be 0) and the output. Exit code 4 means a guard
@@ -121,11 +121,15 @@ stopped the run: use the `heal` skill.
 ## 8. Schedule and monitor
 
 ```bash
-amber schedule add <workflow> --cron "0 9 * * 1" --input week=2026-W45
-amber scheduler                       # foreground loop; or call `amber run` from cron or CI
+amber schedule add <workflow> --cron "0 9 * * *" --input product=all   # fixed inputs only
+amber scheduler                       # foreground loop that runs due schedules
 amber doctor <workflow>               # drift report; exit 5 unless healthy
 amber ui                              # local panel at http://127.0.0.1:8787
 ```
+
+A schedule stores fixed inputs. When an input depends on the date (last week, yesterday), set up
+a cron or CI job that computes it and calls `amber run`, for example
+`amber run weekly-report --input week=$(date -d 'last week' +%G-W%V) --allow-writes`.
 
 ## Budgets and costs
 
