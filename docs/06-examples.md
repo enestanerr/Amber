@@ -111,6 +111,27 @@ Inputs: `--input product=all` / `--input product=lantern-brass`.
 (parsing the snapshot text into `{sku: {price, stock}}`), judgment "is this change notable?"
 with schema `{notable: bool, reason: str}`, conditional alert post.
 
+> **Note (2026-11-02, live run):** three things above did not hold with @playwright/mcp as of
+> this date, so the example changed and the self-healing demo moved to weekly-report.
+>
+> - The snapshot is an accessibility tree (`listitem "Brass Hurricane Lantern $48.00 in stock:
+>   12"`) without CSS classes, and `browser_evaluate` returns markdown text, not JSON. Renaming
+>   `.price` → `.cost` changes nothing the program reads: under scenario B the compiled program
+>   posted the correct alert without a guard stop. The drift loop (guard → doctor `fallback` →
+>   agent resume → `compile --refresh` → v2 verifies 4/4) was demonstrated on weekly-report's
+>   scenario B, where `list_orders` renames `total` to `amount`.
+> - Scenario A has no price change, so recordings on A alone never post and the program could
+>   never alert. Scenario **A2** (two prices change, markup unchanged) was added; `make record`
+>   records `A:all`, `A2:all`, `A2:lantern-brass` and tags each trace `scenario-X`.
+> - `browser_navigate` saves its snapshot to a timestamped file, and the agent read it with
+>   Claude Code's `Read` or fetched `previous.json` from page JavaScript in one run and navigated
+>   to it in another. The task now names `browser_navigate`/`browser_snapshot` and the recordings
+>   disallow `Read,Glob,Grep`.
+>
+> The compiled shape is navigate + snapshot twice (deterministic), a gate judgment ("post an
+> alert?") and the alert text as a judgment. No transform: no tool argument depends on the
+> extracted prices.
+
 ## Makefile contract (each example)
 
 ```

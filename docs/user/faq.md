@@ -14,11 +14,15 @@ yes: either `ANTHROPIC_API_KEY` (Messages API with structured outputs) or a logg
 CLI (`--json-schema`). `align`, `verify`, `doctor` and the panel are offline. Tests use a
 `recorded` backend and never touch the network.
 
-**Which backend should I use at run time?** The `anthropic` backend (`ANTHROPIC_API_KEY`): an
-`llm()` judgment then costs roughly its prompt plus the schema. The `claude` CLI backend is fine
-for `compile` and for trying things out, but every call carries the CLI's own system prompt
-(about 30k input tokens per judgment in our runs), which trips the examples'
-`max_llm_tokens = 20000` budget guard.
+**Which backend should I use at run time?** Either works. With a claude.ai subscription and no
+API key, the `cli` backend runs every hole fill and `llm()` call through
+`claude -p --json-schema`, stripped of built-in tools, dynamic system-prompt sections and session files
+(about 1.2k tokens of CLI overhead per call), at `--effort low` for judgments (override with
+`AMBER_CLI_EFFORT`). The CLI cannot cap output, so a judgment that has to count or compare a lot
+thinks at length: weekly-report's summary uses about 6k thinking tokens and 25 s, and it gets
+the counts right. With `ANTHROPIC_API_KEY` the `anthropic` backend uses structured outputs with
+`max_tokens=1200`. Budgets in `amber.toml` apply at run time, so raising `max_llm_tokens` needs
+no recompile.
 
 **What about side effects?** Write-effect tools are dry-run by default and return a placeholder
 shaped like the recording. Pass `--allow-writes` to execute them. The fallback refuses to

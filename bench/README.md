@@ -1,24 +1,29 @@
 # bench/
 
-`run_bench.py` implements the protocol in `docs/09-launch.md`: N `amber record` runs (the agent
-baseline) against N `amber run` runs of the compiled program, per example, with medians, wall
-time, tool-call fidelity and agent turns. `results.md` / `results.json` are written here and are
-the only numbers that may be quoted as Amber's own.
+`run_bench.py` implements the protocol in `docs/09-launch.md`: the agent baseline (recorded
+`claude -p` runs) against the compiled program (`amber run`), per example, with medians,
+min/max, API-equivalent cost, wall time, tool-call fidelity and agent turns. `results.md` /
+`results.json` are written here and are the only numbers that may be quoted as Amber's own.
 
 ```bash
-uv run python bench/run_bench.py --example weekly-report --runs 3          # live: needs the claude CLI
-uv run python bench/run_bench.py --all --runs 3
-uv run python bench/run_bench.py --example weekly-report --runs 3 --offline   # baseline = existing recordings
+uv run python bench/run_bench.py --all --runs 3                        # fresh recordings, compile, run
+uv run python bench/run_bench.py --all --runs 3 --baseline existing    # reuse the recordings on disk
+uv run python bench/run_bench.py --example weekly-report --offline     # no model at all
 ```
 
-`--offline` uses whatever recordings are already in the example's `.amber/traces` as the
-baseline (after `make seed` those are the synthetic fixtures) and executes the compiled program
-against the mock servers with the recorded model backend (`tests/fixtures/model_fills`), so no
-model is called: the compiled llm token column is then the recorded backend's prompt-length
-estimate, not measured usage. The header of `results.md` states the mode; a live run with
-`claude` replaces it.
+- `--baseline record` records N runs per example with the same flags as the example's
+  `make record` (explicit `--model claude-sonnet-5-5`, `--setting-sources user`), then compiles.
+- `--baseline existing` takes the successful recordings already in each example's
+  `.amber/traces` (fallback traces excluded) and runs the compiled program once per recording,
+  with the same inputs and the same scenario (`scenario-X` trace tags, e.g. price-watch's A2 day).
+- `--offline` is `--baseline existing` with the recorded model backend
+  (`tests/fixtures/model_fills`): nothing calls a model, and the compiled llm-token column is
+  that backend's prompt-length estimate, not measured usage.
 
-Note on backends: a judgment call routed through the `claude` CLI backend carries the CLI's own
-system prompt (about 30k input tokens per call in our runs), which trips the example's
-`max_llm_tokens = 20000` budget guard. For live measurements set `ANTHROPIC_API_KEY` so the
-`anthropic` backend is used, or raise the budget in `amber.toml`.
+Fidelity has two columns. *Exact* compares the compiled run's tool sequence with the recording
+for the same input. *Core* compares it with the recording's calls that the program's steps were
+compiled from (`manifest.trace_calls`), so the agent's exploratory reads that alignment pruned
+do not count against it.
+
+The committed `results.md` is the live run of 2026-11-02 (claude CLI 2.1.316 on a claude.ai
+subscription, agent `claude-sonnet-5-5`, judgments `claude-haiku-5-5`).
