@@ -1,0 +1,14 @@
+{
+  "name": "amber",
+  "displayName": "Amber",
+  "version": "0.1.1",
+  "description": "Turn a workflow Claude Code keeps repeating into a compiled Amber program with replay tests and guards, and repair it when the world drifts",
+  "author": {
+    "name": "enestanerr",
+    "url": "https://github.com/enestanerr"
+  },
+  "homepage": "https://github.com/enestanerr/Amber",
+  "repository": "https://github.com/enestanerr/Amber",
+  "license": "Apache-2.0",
+  "keywords": ["amber", "compiler", "workflow", "automation", "mcp", "agents", "tokens"]
+}

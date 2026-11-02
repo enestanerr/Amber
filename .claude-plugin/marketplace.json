@@ -1,0 +1,14 @@
+{
+  "name": "amber-compiler",
+  "description": "Amber: compile workflows Claude Code keeps repeating into tested programs that run for a fraction of the tokens",
+  "owner": {
+    "name": "enestanerr"
+  },
+  "plugins": [
+    {
+      "name": "amber",
+      "source": "./plugins/amber",
+      "description": "Turn a repeated agent workflow into a compiled Amber program (/amber:compile) and repair it when the world drifts (/amber:heal)"
+    }
+  ]
+}
