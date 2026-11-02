@@ -740,3 +740,13 @@ PyPI publishing (configure the trusted publisher for `amber-compiler`, then set 
 variable `PYPI_PUBLISH=true`; the repository is private, so publishing would make the source
 public) and the post-release `uvx --from amber-compiler` check. A leftover `amber ui --port 8787`
 process from the P9 smoke test still holds `.venv/Scripts/amber.exe`; close it before `uv sync`.
+
+**Release (2026-11-03)**
+
+```
+CI 41525188353 on 95de7c7: gitleaks, py3.12/py3.13 × ubuntu/macos: success (5/5)
+git tag -a v0.1.0 && git push origin v0.1.0
+release.yml 41527017634: build success (uv build + wheel smoke), publish skipped (PYPI_PUBLISH unset)
+gh release create v0.1.0: amber_compiler-0.1.0-py3-none-any.whl, amber_compiler-0.1.0.tar.gz
+https://github.com/enestanerr/Amber/releases/tag/v0.1.0
+```
