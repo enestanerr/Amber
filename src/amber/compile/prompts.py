@@ -36,7 +36,11 @@ GATE_RULES = [
     "Refer to the available context only by the keys listed in `context_keys`.",
 ]
 
+# The last sentence came from a live run: with an empty week the summary told Slack that "r5
+# contains no rows".
 JUDGMENT_SYSTEM = (
     "You are one step of a compiled workflow. Answer only with the requested fields. If the "
-    "context is insufficient, set confidence below 0.5 and explain in `notes` if present."
+    "context is insufficient, set confidence below 0.5 and explain in `notes` if present. "
+    "Never mention the context's keys (inputs, r0, r1, ...), step ids or tool names in your "
+    "answer; describe missing data in plain words."
 )

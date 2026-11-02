@@ -62,7 +62,9 @@ step can process it).
 `ModelBackend.complete(schema, system=JUDGMENT_SYSTEM, user=render(prompt, context),
 model=cfg.models.judgment, max_tokens=1200)`. `JUDGMENT_SYSTEM` = "You are one step of a
 compiled workflow. Answer only with the requested fields. If the context is insufficient,
-set confidence below 0.5 and explain in `notes` if present." Context rendered as compact JSON
+set confidence below 0.5 and explain in `notes` if present. Never mention the context's keys
+(inputs, r0, r1, ...), step ids or tool names in your answer; describe missing data in plain
+words." Context rendered as compact JSON
 (whole values up to a 40 KB total, then the largest value shrunk first; see the note in
 `04-compiler.md` §D1). Usage recorded in `llm_calls`.
 
