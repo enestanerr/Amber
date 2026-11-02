@@ -427,7 +427,11 @@ def verify_judgment(
         report.details.append("prompt is empty")
     # the declared inputs are reachable as `inputs.<name>`; a prompt that names one (`product`)
     # refers to available data (a live compile lost a repair round to this)
-    input_names = {k for ex in hole.examples for k in (ex.context.get("inputs") or {})}
+    input_names: set[str] = set()
+    for ex in hole.examples:
+        declared = ex.context.get("inputs")
+        if isinstance(declared, dict):
+            input_names.update(str(k) for k in cast(dict[str, Any], declared))
     unknown_keys = _referenced_keys(prompt) - set(hole.context_keys) - input_names
     if unknown_keys:
         report.details.append(f"prompt references unavailable context keys {sorted(unknown_keys)}")
