@@ -21,7 +21,7 @@ from pydantic import BaseModel, ValidationError
 from amber.compile.lint import lint_program
 from amber.compile.manifest import Manifest
 from amber.compile.versions import VersionInfo
-from amber.config import AmberConfig
+from amber.config import AmberConfig, BudgetsCfg
 from amber.errors import AmberError, UsageError
 from amber.models.backend import ModelBackend, ModelError
 from amber.runtime.backends.builtins import BuiltinBackend
@@ -304,6 +304,16 @@ class LiveContext:
         log.info("%s", msg)
 
 
+def with_config_budgets(manifest: Manifest, budgets: BudgetsCfg) -> Manifest:
+    """Apply ``amber.toml`` ``[budgets]`` at run time. Token and wall-clock limits are operational
+    knobs and must not need a recompile (which would spend synthesis tokens again); the call
+    limit stays derived from the recordings at compile time."""
+    current = manifest.budgets.model_copy(
+        update={"max_llm_tokens": budgets.max_llm_tokens, "wall_clock_s": budgets.wall_clock_s}
+    )
+    return manifest.model_copy(update={"budgets": current})
+
+
 def run_program(
     root: Path,
     cfg: AmberConfig,
@@ -326,6 +336,7 @@ def run_program(
             f"{manifest.workflow} v{manifest.version} is not usable (verify did not pass)",
             hint=f"Run `amber verify {manifest.workflow}` or pass --force.",
         )
+    manifest = with_config_budgets(manifest, cfg.budgets)
     lint_program(info.program_path.read_text(encoding="utf-8"), where=str(info.program_path))
     program: Program = load_program(info.program_path)
     try:
