@@ -159,3 +159,20 @@ def test_normalize_result_accepts_attribute_objects() -> None:
 
     assert normalize_result(Result()) == ({"a": 1}, "json")
     assert json.loads(canonical_json({"b": 2})) == {"b": 2}
+
+
+def test_result_envelope_is_dropped_on_every_path() -> None:
+    """Claude Code shows the agent ``{"result": [...]}`` as JSON text, the live backend reads
+    structured content: both must canonicalize to the bare list (live run stopped on
+    ``result_shape: $: type array, recorded object`` before this)."""
+    from types import SimpleNamespace
+
+    from amber.trace.canonical import normalize_result
+
+    rows = [{"id": "o_0710", "total": 42.5}]
+    as_agent_text = [{"type": "text", "text": '{"result":[{"id":"o_0710","total":42.5}]}'}]
+    live = SimpleNamespace(structured_content={"result": rows}, content=[])
+    assert normalize_result(as_agent_text) == (rows, "json")
+    assert normalize_result(live) == (rows, "json")
+    assert normalize_result('{"result": 3}') == (3, "json")
+    assert normalize_result({"result": 1, "other": 2}) == ({"result": 1, "other": 2}, "json")

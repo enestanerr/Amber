@@ -147,11 +147,26 @@ def _blob_entry(block: Any, blob_sink: BlobSink | None) -> dict[str, Any]:
     return {"$blob": {"type": btype, "mime": mime, "sha256": sha, "bytes": len(raw)}}
 
 
+def unwrap_envelope(value: Any) -> Any:
+    """Drop the ``{"result": ...}`` envelope MCP servers put around non-object return values.
+
+    Depending on the client the agent sees the envelope (Claude Code 2.1 hands the structured
+    content to the model as JSON text) or the bare value, and the live backend reads structured
+    content directly; every path unwraps so recorded and live shapes agree.
+    """
+    if isinstance(value, dict):
+        wrapped = cast(dict[str, Any], value)
+        if set(wrapped) == {"result"}:
+            return wrapped["result"]
+        return wrapped
+    return value
+
+
 def _text_or_json(text: str) -> tuple[Any, ResultKind]:
     if text == "":
         return None, "empty"
     try:
-        return json.loads(text), "json"
+        return unwrap_envelope(json.loads(text)), "json"
     except ValueError:
         return text, "text"
 
@@ -167,13 +182,7 @@ def normalize_result(result: Any, *, blob_sink: BlobSink | None = None) -> tuple
 
     structured: Any = _block_field(result, "structuredContent", "structured_content")
     if structured is not None:
-        # MCP servers wrap non-object return values as {"result": ...}; recordings made through
-        # an agent see the plain text form, so unwrap to keep live and recorded shapes equal.
-        if isinstance(structured, dict):
-            wrapped = cast(dict[str, Any], structured)
-            if set(wrapped) == {"result"}:
-                return wrapped["result"], "json"
-        return cast(Any, structured), "json"
+        return unwrap_envelope(structured), "json"
 
     blocks: list[Any]
     if isinstance(result, list):
