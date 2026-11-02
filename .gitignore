@@ -21,6 +21,9 @@ htmlcov/
 .amber/
 examples/*/.amber/
 examples/*/.outbox/
+# compiled programs are build output of `make demo` / `make demo-offline` (their source
+# recordings live in the gitignored .amber/)
+examples/*/programs/
 examples/*/.scenario
 *.env
 .env.*
