@@ -38,22 +38,35 @@ class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+def _is_none(value: object) -> bool:
+    return value is None
+
+
 class Usage(_Model):
     input_tokens: int = 0  # non-cached input
     cache_read_tokens: int = 0
     cache_creation_tokens: int = 0
     output_tokens: int = 0
+    # API-equivalent cost as reported by the backend (the claude CLI reports one per call);
+    # never estimated. Left out of serialized traces when unknown.
+    cost_usd: float | None = Field(default=None, exclude_if=_is_none)
 
     @property
     def total_input(self) -> int:
         return self.input_tokens + self.cache_read_tokens + self.cache_creation_tokens
 
     def __add__(self, other: Usage) -> Usage:
+        cost = (
+            None
+            if self.cost_usd is None and other.cost_usd is None
+            else (self.cost_usd or 0.0) + (other.cost_usd or 0.0)
+        )
         return Usage(
             input_tokens=self.input_tokens + other.input_tokens,
             cache_read_tokens=self.cache_read_tokens + other.cache_read_tokens,
             cache_creation_tokens=self.cache_creation_tokens + other.cache_creation_tokens,
             output_tokens=self.output_tokens + other.output_tokens,
+            cost_usd=cost,
         )
 
 

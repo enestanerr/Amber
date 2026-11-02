@@ -185,3 +185,38 @@ async def test_cli_backend_passes_effort(monkeypatch: pytest.MonkeyPatch) -> Non
     await backend.complete(Out, "sys", "user", model="m", max_tokens=1200)
     await backend.complete(Out, "sys", "user", model="m", max_tokens=4000)
     assert seen[0][seen[0].index("--effort") + 1] == "low" and "--effort" not in seen[1]
+
+
+async def test_cli_backend_reports_cost_and_both_attempts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A rejected first answer still cost tokens; the CLI's own cost figure is kept."""
+    backend = ClaudeCliBackend()
+    payloads = [
+        {
+            "result": "garbage",
+            "usage": {"input_tokens": 5, "output_tokens": 2},
+            "total_cost_usd": 0.01,
+        },
+        {
+            "structured_output": {"text": "ok"},
+            "usage": {"input_tokens": 3, "cache_read_input_tokens": 7, "output_tokens": 1},
+            "total_cost_usd": 0.02,
+        },
+    ]
+    calls: list[int] = []
+
+    async def fake_run(argv: list[str], stdin: str = "") -> dict[str, Any]:
+        calls.append(1)
+        return payloads[len(calls) - 1]
+
+    monkeypatch.setattr(backend, "_run", fake_run)
+    _, usage = await backend.complete(Out, "sys", "user", model="m", max_tokens=1200)
+    assert (usage.input_tokens, usage.cache_read_tokens, usage.output_tokens) == (8, 7, 3)
+    assert usage.cost_usd is not None and abs(usage.cost_usd - 0.03) < 1e-9
+
+
+def test_usage_cost_is_optional_and_left_out_when_unknown() -> None:
+    from amber.trace.models import Usage
+
+    assert "cost_usd" not in Usage(input_tokens=1).model_dump(mode="json")
+    assert (Usage() + Usage()).cost_usd is None
+    assert (Usage(cost_usd=0.5) + Usage()).cost_usd == 0.5

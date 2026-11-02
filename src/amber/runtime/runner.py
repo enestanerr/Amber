@@ -405,8 +405,8 @@ def run_program(
     usage = ctx.usage if ctx else Usage()
     ledger.close_run(
         run_id, status=status, steps=steps, llm_calls=llm_calls,
-        llm_input_tokens=usage.total_input, llm_output_tokens=usage.output_tokens, cost_usd=None,
-        stop_kind=stop_kind, stop_detail=stop_detail or error,
+        llm_input_tokens=usage.total_input, llm_output_tokens=usage.output_tokens,
+        cost_usd=usage.cost_usd, stop_kind=stop_kind, stop_detail=stop_detail or error,
     )  # fmt: skip
     return RunResult(
         run_id=run_id,
@@ -415,7 +415,7 @@ def run_program(
         status=status,
         mode=mode,
         steps=steps, llm_calls=llm_calls, llm_input_tokens=usage.total_input,
-        llm_output_tokens=usage.output_tokens, cost_usd=None, duration_ms=duration_ms,
+        llm_output_tokens=usage.output_tokens, cost_usd=usage.cost_usd, duration_ms=duration_ms,
         stop_kind=stop_kind, stop_detail=stop_detail, error=error, output=output,
         guard_events=list(guards.events), step_log=list(ctx.step_log) if ctx else [],
         completed_calls=list(ctx.completed_calls) if ctx else [], inputs=dict(raw_inputs),

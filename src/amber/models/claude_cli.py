@@ -127,19 +127,22 @@ class ClaudeCliBackend:
         if effort:
             argv += ["--effort", effort]
         last_error = ""
+        spent = Usage()  # a rejected first answer still cost tokens: report both attempts
         try:
             for _attempt in range(2):
                 payload = await self._run(argv, user)
                 candidate = extract_candidate(payload)
                 usage_raw = cast(dict[str, Any], payload.get("usage") or {})
-                usage = Usage(
+                cost = payload.get("total_cost_usd")
+                spent = spent + Usage(
                     input_tokens=int(usage_raw.get("input_tokens") or 0),
                     output_tokens=int(usage_raw.get("output_tokens") or 0),
                     cache_read_tokens=int(usage_raw.get("cache_read_input_tokens") or 0),
                     cache_creation_tokens=int(usage_raw.get("cache_creation_input_tokens") or 0),
+                    cost_usd=float(cost) if isinstance(cost, int | float) else None,
                 )
                 try:
-                    return schema.model_validate(candidate), usage
+                    return schema.model_validate(candidate), spent
                 except ValidationError as e:
                     last_error = str(e).splitlines()[0]
         finally:
