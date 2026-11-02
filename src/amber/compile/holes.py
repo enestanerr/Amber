@@ -300,6 +300,19 @@ _PY_TYPES: dict[FieldType, Any] = {
 }
 
 
+_PLACEHOLDERS: dict[FieldType, Any] = {
+    "str": "",
+    "int": 0,
+    "float": 0.0,
+    "bool": False,
+    "list[str]": [],
+}
+
+
+def _placeholder(f: FieldSpec) -> Any:
+    return f.enum[0] if f.enum else _PLACEHOLDERS[f.type]
+
+
 def build_judgment_model(name: str, fields: list[FieldSpec]) -> type[BaseModel]:
     """Pydantic model (``extra="forbid"``) from field specs, with ``confidence`` added."""
     definitions: dict[str, Any] = {}
@@ -426,8 +439,15 @@ def verify_judgment(
     except Exception as e:
         return VerifyReport(ok=False, details=[f"schema cannot be built: {e}"])
     for ex in hole.examples:
+        # a gate's ``reason`` (and any field a recording cannot contain) gets a type-correct
+        # stand-in: requiring it made every gate fail ("recorded value rejected at reason")
+        unrecorded = {
+            f.name: _placeholder(f)
+            for f in fields
+            if f.name not in ex.expected and f.name != "confidence"
+        }
         try:
-            model.model_validate({**ex.expected, "confidence": 1.0})
+            model.model_validate({**unrecorded, **ex.expected, "confidence": 1.0})
         except ValidationError as e:
             first = e.errors()[0]
             loc = ".".join(str(p) for p in first["loc"])

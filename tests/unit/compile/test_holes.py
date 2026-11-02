@@ -186,3 +186,27 @@ def test_downgrade_to_judgment() -> None:
     assert j.id == "judgment_step1" and j.kind == "judgment" and j.fields == {"limit": "$.limit"}
     assert j.context_keys == ["inputs", "r0"] and j.examples[0].context["r0"] == {"count": 2}
     assert j.examples[1].expected == {"limit": 10}
+
+
+def test_gate_verifies_although_reason_is_never_recorded() -> None:
+    """Recordings show only whether the step ran; requiring `reason` made every gate fail."""
+    gate = Hole(
+        id="gate_step4",
+        kind="gate",
+        step_idx=4,
+        tool="alerts.post_message",
+        fields={"go": "", "reason": ""},
+        params=[],
+        context_keys=["inputs", "r1", "r3"],
+        examples=[
+            HoleExample("t0", context={"inputs": {}}, expected={"go": False}),
+            HoleExample("t1", context={"inputs": {}}, expected={"go": True}),
+        ],
+        expected_types={"go": "bool", "reason": "str"},
+    )
+    fields = [
+        FieldSpec(name="go", type="bool", description="Post the alert?"),
+        FieldSpec(name="reason", type="str", description="Why."),
+    ]
+    report = verify_judgment(gate, "Did a price in `r1` change versus `r3`?", fields)
+    assert report.ok, report.details
