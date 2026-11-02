@@ -51,6 +51,17 @@ def test_user_flags_are_not_duplicated() -> None:
     assert p.prompt == "t"  # variadic values were not mistaken for the prompt
 
 
+def test_strict_mcp_config_added_once_with_mcp() -> None:
+    """Only the recording's servers: the user's global MCP servers stay out of the trace."""
+    p = prepare_claude_argv(["claude", "-p", "t"], mcp_config=Path("mcp.json"))
+    assert p.argv.count("--strict-mcp-config") == 1
+    p = prepare_claude_argv(
+        ["claude", "-p", "t", "--strict-mcp-config"], mcp_config=Path("mcp.json")
+    )
+    assert p.argv.count("--strict-mcp-config") == 1
+    assert "--strict-mcp-config" not in prepare_claude_argv(["claude", "-p", "t"]).argv
+
+
 def test_conflicting_output_format_rejected() -> None:
     with pytest.raises(UsageError, match="conflicting"):
         prepare_claude_argv(["claude", "-p", "t", "--output-format", "json"])

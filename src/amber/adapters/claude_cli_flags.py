@@ -146,6 +146,10 @@ def prepare_claude_argv(
         args.append(VERBOSE)
     if mcp_config is not None and MCP_CONFIG not in flags:
         args += [MCP_CONFIG, str(mcp_config)]
+    if mcp_config is not None and STRICT_MCP_CONFIG not in flags:
+        # only the servers of the recording: the user's global MCP servers would otherwise
+        # land in the agent's context and in the trace's tool list
+        args.append(STRICT_MCP_CONFIG)
     if allow and ALLOWED_TOOLS not in flags and "--allowed-tools" not in flags:
         args += [ALLOWED_TOOLS, ",".join(allow)]
     if permission_mode and PERMISSION_MODE not in flags:

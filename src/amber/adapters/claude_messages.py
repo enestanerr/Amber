@@ -67,6 +67,10 @@ def parse_stream_line(line: str) -> dict[str, Any] | None:
     return cast(dict[str, Any], obj)
 
 
+# Claude Code tools that are bookkeeping for the harness itself, never workflow steps.
+HARNESS_INTERNAL_TOOLS = frozenset({"ToolSearch"})
+
+
 def parse_claude_tool_name(name: str) -> tuple[str, str]:
     """``mcp__shop__list_orders`` → ``("shop", "list_orders")``; anything else → builtin."""
     if name.startswith("mcp__"):
@@ -133,6 +137,7 @@ class ClaudeMessageMapper:
         self.denied: list[str] = []
         self.warnings: list[str] = []
         self._pending: dict[str, tuple[ToolCall, float]] = {}
+        self._internal: set[str] = set()
         self._last_text = ""
 
     # -- dispatch ------------------------------------------------------------
@@ -247,8 +252,10 @@ class ClaudeMessageMapper:
             self._last_text = text
             self.events.append(Thought(idx=len(self.events), text=text))
 
-    def _stub_tool(self, raw_name: str) -> ToolSchema:
+    def _stub_tool(self, raw_name: str) -> ToolSchema | None:
         server, tool = parse_claude_tool_name(raw_name)
+        if server == BUILTIN_SERVER and tool in HARNESS_INTERNAL_TOOLS:
+            return None
         canonical = canonical_tool_name(server, tool)
         if canonical not in self.tools:
             effect = builtin_effect(tool) if server == BUILTIN_SERVER else "unknown"
@@ -258,8 +265,17 @@ class ClaudeMessageMapper:
     def _open_call(
         self, block: dict[str, Any], parent: str | None, timestamp: datetime | None
     ) -> None:
-        schema = self._stub_tool(str(block.get("name") or "unknown"))
+        raw_name = str(block.get("name") or "unknown")
         call_id = str(block.get("id") or f"call_{len(self.events)}")
+        schema = self._stub_tool(raw_name)
+        if schema is None:
+            # harness bookkeeping (e.g. Claude Code's ToolSearch loading deferred tool
+            # schemas): not part of the workflow, so neither a step nor a builtin to compile
+            self._internal.add(call_id)
+            self.events.append(
+                Note(idx=len(self.events), source="adapter", text=f"skipped {raw_name}")
+            )
+            return
         raw_args = block.get("input")
         args = cast(dict[str, Any], raw_args) if isinstance(raw_args, dict) else {}
         call = ToolCall(
@@ -277,6 +293,8 @@ class ClaudeMessageMapper:
 
     def _close_call(self, block: dict[str, Any]) -> None:
         call_id = str(block.get("tool_use_id") or "")
+        if call_id in self._internal:
+            return
         entry = self._pending.pop(call_id, None)
         if entry is None:
             log.debug("tool_result for unknown call %s", call_id)

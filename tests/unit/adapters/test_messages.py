@@ -182,3 +182,17 @@ def test_stream_fixtures_map_to_golden_traces(run: int, trace_id: str, week: str
     assert golden.calls[0].result["start"] == WEEKS[week][0]
     assert golden.outcome.status == "success" and golden.outcome.usage.cache_read_tokens == 12000
     assert any("\x1b" in line for line in lines)  # fixture really has an ANSI-prefixed line
+
+
+def test_harness_internal_tools_are_skipped() -> None:
+    """Claude Code's ToolSearch loads deferred tool schemas; it is bookkeeping, not a step."""
+    m = _mapper()
+    m.feed({"type": "system", "subtype": "init", "tools": ["ToolSearch", "mcp__shop__week_range"]})
+    m.feed(_tool_use("c0", "ToolSearch", {"query": "select:mcp__shop__week_range"}))
+    m.feed(_tool_result("c0", [{"type": "tool_reference", "tool_name": "mcp__shop__week_range"}]))
+    m.feed(_tool_use("c1", "mcp__shop__week_range", {"week": "2026-W42"}))
+    m.feed(_tool_result("c1", '{"start": "2026-10-12", "end": "2026-10-18"}'))
+    t = m.build(trace_id="t", created_at=T0)
+    assert [c.tool for c in t.calls] == ["shop.week_range"]
+    assert t.tool_schema("builtin.ToolSearch") is None and not m.warnings
+    assert any(getattr(e, "text", "") == "skipped ToolSearch" for e in t.events)
