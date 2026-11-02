@@ -326,11 +326,11 @@ uv run amber verify weekly-report --trace t_broken; echo $?                     
 **Read:** `docs/05-runtime.md` §2–3 (live backends, builtins, guards, ledger, scheduler).
 
 **Tasks**
-- [ ] `runtime/backends/live.py`: `LiveBackend(manifest, servers_config)` — opens one
+- [x] `runtime/backends/live.py`: `LiveBackend(manifest, servers_config)` — opens one
       `mcp.Client` per server from `amber.toml [servers]` (stdio or streamable HTTP), caches
       `list_tools`, executes `call_tool`, normalizes results (`structured_content` → JSON; text
       that parses as JSON → JSON; else text), measures duration.
-- [ ] `runtime/backends/builtins.py`: safe subset of Claude Code tools for compiled programs:
+- [x] `runtime/backends/builtins.py`: safe subset of Claude Code tools for compiled programs:
       `builtin.Read`, `builtin.Write`, `builtin.Glob`, `builtin.Grep`, `builtin.WebFetch`
       (httpx GET, 10 MB cap, 30 s timeout), `builtin.Bash` under the policy: only the recorded
       command template with substituted provenance values; cwd pinned to the program's
@@ -338,21 +338,21 @@ uv run amber verify weekly-report --trace t_broken; echo $?                     
       sh`, `> /dev/`). Any other builtin (`Edit`, `Task`, `WebSearch`, `NotebookEdit`) →
       compile-time error with hint ("re-record with MCP tools or mark the step as
       judgment").
-- [ ] `runtime/guards.py`: `ToolAllowlistGuard`, `ResultShapeGuard` (genson schema inferred
+- [x] `runtime/guards.py`: `ToolAllowlistGuard`, `ResultShapeGuard` (genson schema inferred
       from recordings per step; mismatch severity: missing required key = `hard`, extra key =
       `soft`), `BudgetGuard` (max_calls = 2× recorded max, max_llm_tokens from manifest,
       wall-clock), `WriteEffectGuard` (tool `effect == "write"` requires `--allow-writes`;
       otherwise the call is logged as `dry-run` and a placeholder result shaped like the
       recorded one is returned), `LLMOutputGuard` (schema + optional `confidence` ≥ threshold).
       Guards raise `GuardStop(kind, severity, detail)`.
-- [ ] `runtime/ledger.py`: SQLite tables `runs`, `run_steps`, `guard_events`, `llm_calls`,
+- [x] `runtime/ledger.py`: SQLite tables `runs`, `run_steps`, `guard_events`, `llm_calls`,
       `decision_records` (single writer; schema in spec). Token/cost accounting per run.
-- [ ] `runtime/runner.py`: `run(program_version, inputs, mode=live, allow_writes, fallback)`
+- [x] `runtime/runner.py`: `run(program_version, inputs, mode=live, allow_writes, fallback)`
       → `RunResult`; prints a compact step log and a summary (steps, llm calls, tokens, cost,
       duration, status).
-- [ ] CLI `amber run <workflow> [--input k=v]... [--version N] [--dry-run] [--allow-writes]
+- [x] CLI `amber run <workflow> [--input k=v]... [--version N] [--dry-run] [--allow-writes]
       [--fallback agent|none] [--json]`; exit 4 when a guard stopped the run.
-- [ ] `runtime/scheduler.py` (P2 priority — do last in this phase): `amber schedule add
+- [x] `runtime/scheduler.py` (P2 priority — do last in this phase): `amber schedule add
       <workflow> --cron "0 9 * * 1" --input k=v`, `amber schedule ls/rm`, `amber scheduler`
       (foreground loop using `croniter`; documented alternative: system cron / GitHub Actions
       calling `amber run`).
@@ -411,14 +411,14 @@ uv run amber compile price-watch --refresh && uv run amber verify price-watch   
 **Read:** `docs/06-examples.md`. Mock servers may be built early in a parallel subagent.
 
 **Tasks**
-- [ ] `examples/_shared/`: `synth.py` (seeded Faker-free generators: names from word lists,
+- [x] `examples/_shared/`: `synth.py` (seeded Faker-free generators: names from word lists,
       deterministic ids), `outbox.py` (Slack-mock outbox writer), `mcp_common.py`.
 - [ ] `examples/issue-triage/`: `server_github.py` (tools: `list_issues(state, since)`,
       `get_issue(number)`, `add_labels(number, labels)` [write], `search_issues(query)`),
       `server_slack.py` (`post_message(channel, text)` [write], `list_channels()`), `scenario.py`
       (seed → 40 issues across areas; scenario B adds a new label taxonomy), `task.md`,
       `mcp.json`, `Makefile`.
-- [ ] `examples/weekly-report/`: `server_shop.py` (SQLite with synthetic orders; tools:
+- [x] `examples/weekly-report/`: `server_shop.py` (SQLite with synthetic orders; tools:
       `week_range(week)`, `list_orders(since, until)`, `list_customers()`, `top_products(since,
       until, n)`), `server_slack.py` (shared), `scenario.py` (seed, 12 weeks of orders; scenario
       B renames `total` → `amount` to cause result-shape drift), `task.md`, `mcp.json`,
@@ -431,7 +431,7 @@ uv run amber compile price-watch --refresh && uv run amber verify price-watch   
       `verify`, `run`, `drift`, `demo` (all of the above), `clean`.
 - [ ] Top-level `make demo` = `examples/weekly-report` demo; `make drift` = price-watch drift
       story.
-- [ ] `examples/README.md` with what each example demonstrates and expected outputs.
+- [x] `examples/README.md` with what each example demonstrates and expected outputs.
 
 **Acceptance**
 ```bash

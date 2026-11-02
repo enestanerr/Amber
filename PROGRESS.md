@@ -367,3 +367,74 @@ error: 1 of 1 traces diverged
 ```
 
 Full suite: 221 passed, 1 skipped. ruff + pyright clean.
+
+## 2026-11-02 — P6 Run (live backends, guards, ledger, runner, scheduler) + P8 servers (early)
+
+**Decisions**: D8 (dry-run by default; `--allow-writes` explicit), D11 (minimal in-process
+scheduler; cron/GitHub Actions recommended in docs), D9 (mock servers, synthetic data).
+
+**Built**
+
+- `runtime/backends/live.py`: one `mcp.Client` per `[servers.*]` (stdio with the full env and
+  the project dir as cwd, or streamable HTTP), tool listing cached, effects from annotations,
+  schema-drift events (missing tool / input-schema hash change → hard), `ToolError` with a
+  transient-pattern retry hint.
+- `runtime/backends/builtins.py`: `Read/Write/Glob/Grep/WebFetch/Bash` under the policy
+  (paths confined to the work dir or `[builtins].read_roots`; WebFetch http(s) only, 10 MB,
+  30 s, HTML tag-stripped; Bash must fully match the recorded template regex, deny-list, pipes
+  only if recorded, scrubbed env, 120 s). Other builtins → compile-time `UnsupportedBuiltin`.
+- `runtime/guards.py`: allowlist, budgets (calls, llm tokens, wall-clock), write-effect
+  dry-run with the manifest's masked placeholder (effect `unknown` is treated as write),
+  result-shape validation against the genson schemas (missing key / type → hard, extra key /
+  empty list → soft), llm confidence (soft) and validation (hard after one retry), error
+  guard, schema drift (hard stops before the first call). `GuardStop` → exit 4.
+- `runtime/ledger.py`: the frozen SQLite schema (`runs`, `run_steps`, `guard_events`,
+  `llm_calls`, `decision_records`, `schedules`) over the single-writer `Db`.
+- `runtime/runner.py`: `LiveContext` sync facade over an event loop in a worker thread; step
+  cursor maps calls to manifest steps; transient tool errors retried once; every run, step,
+  guard event and llm call is ledgered; `RunResult` with `agent_turns = 0`.
+- `runtime/scheduler.py` + `amber schedule add|ls|rm`, `amber scheduler [--once]`.
+- Manifest gained `placeholder_results` and `bash_templates`.
+- CLI `amber run <wf> [--input k=v] [--version N] [--dry-run] [--allow-writes]
+  [--fallback agent|none] [--timeout S] [--force] [--json]` (exit 4 on a guard stop).
+- Examples (P8, parallel-safe part): `examples/_shared/{synth,mcp_common,server_slack}.py`,
+  `examples/weekly-report/{server_shop.py,scenario.py,amber.toml,mcp.json,task.md,Makefile}`,
+  `examples/README.md`. `make demo-offline` seeds the synthetic fixture recordings, compiles
+  with the recorded model fills, verifies 3/3 and dry-runs against the live mock servers.
+
+**Spec corrections**
+
+- Schema hashes now ignore `title`/`description`/`$schema`/`examples` and empty `required`
+  (`trace.canonical.normalize_schema`), and `ToolSchema.hash` is always recomputed from
+  `input_schema`: hand-written and server-generated schemas for the same inputs hash the same,
+  and traces survive changes to the hashing rule.
+- `normalize_result` unwraps MCP's `{"result": …}` structured-content envelope for non-object
+  returns, so live results have the shape the agent saw in the recording.
+- `amber run --dry-run` is the explicit form of the default (writes never execute); it is
+  mutually exclusive with `--allow-writes`.
+
+**Acceptance (2026-11-02)**
+
+```
+$ uv run pytest -q tests/unit/runtime
+43 passed   (guards table, builtins policy, ledger, cassette, verify, live backend with the echo
+             server, runner against the mock shop/slack servers, scheduler)
+
+$ cd examples/weekly-report && make demo-offline        # seed + compile + verify + run --dry-run
+  holes filled 2/2 · usable: yes
+│ t1 │ 5/5 │ 1 │ PASS │ … 3/3 PASS
+  #1   shop.week_range              ok           46 ms
+  #2   shop.list_orders             ok           14 ms
+  #3   shop.top_products            ok            0 ms
+  #4   shop.rfm_snapshot            ok           14 ms
+  #5   llm:step4                    llm           0 ms  1584+85 tok
+  #5   slack.post_message           dry-run       0 ms  write effect; pass --allow-writes to execute
+Run weekly-report v1 → ok  (r_20261102_180004_418672, dry-run)
+  steps 5 · llm calls 1 · tokens in 1,584 · out 85 · 1.9 s · agent turns 0
+
+$ amber run weekly-report --input week=2026-W44 --allow-writes --json | python -c "...status=='ok' and agent_turns==0 and llm_calls<=2"
+(covered by tests/unit/cli/test_run.py::test_run_dry_run_and_allow_writes; .outbox/slack.jsonl receives the post)
+$ make drift && amber run … → exit 4, stop_kind result_shape (tests/unit/cli/test_run.py::test_run_guard_stop_exits_4)
+```
+
+Full suite: 257 passed, 1 skipped. ruff + pyright clean.

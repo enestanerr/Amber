@@ -21,7 +21,9 @@ control back to the agent and recompiles.
 | P3 Align — sequence alignment, provenance, classification, pruning, `amber align --show` | done |
 | P4 Compile — codegen, typed holes + synthesizer, sandbox/lint, versions, `amber compile`, `amber programs` | done |
 | P5 Verify — cassette replay, `amber verify`, compile marks usable only after 3/3 replay | done |
-| P6–P10 | not started |
+| P6 Run — live MCP backend, builtins, guards, ledger, `amber run` (0 agent turns), scheduler | done |
+| P8 Examples — weekly-report servers + `make demo-offline` | partial |
+| P7, P9, P10 | not started |
 
 ## Install (development)
 

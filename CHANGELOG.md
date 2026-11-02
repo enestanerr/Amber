@@ -8,6 +8,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Run (P6): live MCP backend, safe builtins, guards (allowlist, budgets, write-effect dry-run,
+  result shape, llm output, schema drift), SQLite ledger, runner with 0 agent turns,
+  `amber run` (exit 4 on guard stop), `amber schedule` + `amber scheduler`.
+- Examples (P8, partial): synthetic generators, mock Slack and shop MCP servers, the
+  weekly-report project with `make demo-offline` / `make demo` / `make drift`.
 - Verify (P5): cassette replay of every source trace (volatile masking, recorded `llm()`
   values, divergence diffs with hints, `--unordered`, `--live-llm` agreement), compile marks
   versions usable only after replay passes; `amber verify` (exit 3 on failure).
