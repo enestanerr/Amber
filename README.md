@@ -16,7 +16,7 @@ step and Amber recompiles.
 [![ci](https://github.com/enestanerr/Amber/actions/workflows/ci.yml/badge.svg)](https://github.com/enestanerr/Amber/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)
 ![license](https://img.shields.io/badge/license-Apache--2.0-green)
-![version](https://img.shields.io/badge/version-0.1.1-orange)
+[![pypi](https://img.shields.io/pypi/v/amber-compiler)](https://pypi.org/project/amber-compiler/)
 ![claude](https://img.shields.io/badge/works%20with-Claude%20Code-D97757)
 
 <img src="https://raw.githubusercontent.com/enestanerr/Amber/main/docs/assets/demo.svg" alt="Amber demo: compile three recordings, run on a new week, the data drifts, the doctor hands the task back to the agent, Amber recompiles" width="860">
@@ -83,20 +83,20 @@ counting 240 RFM rows, correctly). FlashScript's 70× is the paper's number, not
 ## Install
 
 ```bash
-uv tool install git+https://github.com/enestanerr/Amber        # or: pipx install git+https://github.com/enestanerr/Amber
-amber --version                                                 # amber 0.1.1
+uv tool install amber-compiler        # or: pipx install amber-compiler
+amber --version                       # amber 0.1.1
 ```
 
 Optional extras: `[ui]` for the local web panel and `[sdk]` for the Claude Agent SDK recorder:
 
 ```bash
-uv tool install "amber-compiler[ui,sdk] @ git+https://github.com/enestanerr/Amber"
+uv tool install "amber-compiler[ui,sdk]"
 ```
 
 You need Python 3.12+ ([uv](https://docs.astral.sh/uv/) installs it for you) and one way to reach
 Claude: a logged-in [Claude Code](https://claude.com/claude-code) CLI (a Pro or Max subscription
 is enough, no API key) or `ANTHROPIC_API_KEY`. The price-watch example also needs Node 18+.
-A PyPI package (`amber-compiler`) is next.
+To follow `main` instead of the latest release: `uv tool install git+https://github.com/enestanerr/Amber`.
 
 ## Try it in two minutes
 

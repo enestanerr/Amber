@@ -23,7 +23,7 @@ systems: ask before each of them.
 ## 0. Check the tools
 
 ```bash
-amber --version        # missing? uv tool install git+https://github.com/enestanerr/Amber
+amber --version        # missing? uv tool install amber-compiler
 claude --version       # recordings run Claude Code headless (a claude.ai subscription is enough)
 ```
 
