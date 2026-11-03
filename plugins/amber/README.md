@@ -50,5 +50,15 @@ Amber sends no telemetry, and nothing goes to services other than Claude and the
 pages your workflow uses. Write tools run in dry-run mode unless you pass `--allow-writes`, and
 the skills ask before anything costs tokens or writes.
 
+## Privacy
+
+Amber has no server and collects nothing about you. What it records stays in your project on
+your machine: traces hold the tool calls and results your workflow saw, so they can contain
+personal data that your MCP servers return (customer records, for example), and the run ledger
+keeps step logs and outputs. `amber import` reads only the Claude Code transcript you choose: a
+path you give, or with `--latest` the newest one for the current directory. Delete `.amber/` and `programs/` to remove everything Amber stored. Model calls go to
+Anthropic through your `claude` login or API key, under your Claude account's terms; tool calls
+go only to the servers and pages your workflow uses.
+
 Documentation, source and issues: [github.com/enestanerr/Amber](https://github.com/enestanerr/Amber).
 License: Apache-2.0.

@@ -12,6 +12,7 @@
   "icon": "./icon.png",
   "documentationUrl": "https://github.com/enestanerr/Amber#readme",
   "supportUrl": "https://github.com/enestanerr/Amber/issues",
+  "privacyPolicyUrl": "https://github.com/enestanerr/Amber/blob/main/plugins/amber/README.md#privacy",
   "license": "Apache-2.0",
   "keywords": ["amber", "compiler", "workflow", "automation", "mcp", "agents", "tokens"]
 }
