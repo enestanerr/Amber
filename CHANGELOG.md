@@ -7,6 +7,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- The plugin folder has a README, a 512 px icon and listing links (`icon`, `documentationUrl`,
+  `supportUrl` in `plugin.json`) for Anthropic's plugin directory. The README says what the
+  plugin runs and sends.
+
 ## [0.1.2] - 2026-11-03
 
 Amber is on PyPI. No code changes; this release makes the PyPI page match the README.

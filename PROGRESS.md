@@ -806,3 +806,22 @@ amber 0.1.2
 
 Still with the maintainer: publish the v0.1.2 release (the tag triggers `release.yml`, which
 publishes to PyPI).
+
+## 2026-11-03 — Plugin directory listing
+
+The directory reads the listing from `plugins/amber`: it needs a README of at least 40 words in
+the plugin folder (there was none) and takes an optional `icon` from `plugin.json`. Added
+`plugins/amber/README.md` (skills, install line, requirements, and what the plugin runs and
+sends), `plugins/amber/icon.png` (512 × 512, the gem mark from the launch visuals) and the
+`icon`, `documentationUrl` and `supportUrl` fields.
+
+```
+$ claude plugin validate ./plugins/amber --strict      # Claude Code 2.1.317
+√ These checks found nothing to report
+√ Validation passed
+$ claude plugin validate .
+√ Validation passed
+```
+
+Next, with the maintainer: the developer portal at claude.ai/directory/manage (Plugin bundle,
+repository `enestanerr/Amber`, plugin path `plugins/amber`).

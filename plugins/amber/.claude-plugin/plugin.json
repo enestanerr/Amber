@@ -9,6 +9,9 @@
   },
   "homepage": "https://github.com/enestanerr/Amber",
   "repository": "https://github.com/enestanerr/Amber",
+  "icon": "./icon.png",
+  "documentationUrl": "https://github.com/enestanerr/Amber#readme",
+  "supportUrl": "https://github.com/enestanerr/Amber/issues",
   "license": "Apache-2.0",
   "keywords": ["amber", "compiler", "workflow", "automation", "mcp", "agents", "tokens"]
 }
