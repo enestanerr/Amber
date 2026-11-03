@@ -4,6 +4,9 @@
 
 **Your agent figured the workflow out once. Stop paying for it every run.**
 
+An open implementation of [FlashScript](https://arxiv.org/abs/2610.33876) (USC & Microsoft, 2026),
+with the operating loop around it.
+
 Record Claude Code doing a task a few times. Amber compiles the recordings into a readable Python
 program that does the same job on the next input: plain code for the mechanical steps, one small
 `llm()` call where judgment is needed, replay tests generated from the recordings, and guards
@@ -444,6 +447,13 @@ read_roots = ["./data"]         # where the compiled Read/Glob/Grep builtins may
 
 - [FlashScript](https://arxiv.org/abs/2610.33876): the research result Amber implements in the
   open, with adapters and an operating loop.
+- [TraceCompiler](https://arxiv.org/abs/2608.02680): mines clusters of agent traces into mostly
+  deterministic workflows with an argument-level dependency rule, implemented as a skill an agent
+  follows; Amber generates the program with code and accepts it only after replaying every
+  recording.
+- [SKILL-DISCO](https://arxiv.org/abs/2606.26669): distills parameterised control-flow subgraphs
+  from successful traces into callable skills, evaluated on ALFWorld and WebArena; Amber targets
+  recurring tool workflows and emits a standalone program with run guards and a drift loop.
 - [muscle-mem](https://github.com/pig-dot-dev/muscle-mem): a behaviour cache that replays one
   recorded path; Amber compiles several runs into a parameterised program with typed `llm()`
   steps, replay tests and a drift loop, without instrumenting your agent.
