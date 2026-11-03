@@ -84,7 +84,7 @@ counting 240 RFM rows, correctly). FlashScript's 70× is the paper's number, not
 
 ```bash
 uv tool install amber-compiler        # or: pipx install amber-compiler
-amber --version                       # amber 0.1.1
+amber --version                       # amber 0.1.2
 ```
 
 Optional extras: `[ui]` for the local web panel and `[sdk]` for the Claude Agent SDK recorder:

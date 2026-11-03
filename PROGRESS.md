@@ -782,3 +782,27 @@ All checks passed! · 173 files already formatted · 0 errors
 
 Still with the maintainer: PyPI (trusted publisher + `PYPI_PUBLISH=true`), a 512 px plugin icon
 for Anthropic's plugin directory, and the launch posts.
+
+## 2026-11-03 — PyPI and 0.1.2
+
+- `amber-compiler` 0.1.1 is on PyPI: the maintainer configured the trusted publisher and
+  `PYPI_PUBLISH=true`, and the v0.1.1 `release` run was re-run. In a clean environment
+  `uvx --from amber-compiler amber --version` → `amber 0.1.1`.
+- README and the `/amber:compile` skill install from PyPI; the static version badge is now the
+  PyPI badge. FlashScript is credited under the tagline, and Related work adds TraceCompiler and
+  SKILL-DISCO.
+- 0.1.2 only bumps the version, so the PyPI page shows the current README (PyPI takes the long
+  description from the tagged release). The built wheel's description has the PyPI install line
+  and no longer says "A PyPI package is next".
+
+```
+$ uv run pytest -q
+340 passed, 1 skipped
+$ uv run ruff check . && uv run ruff format --check . && uv run pyright
+All checks passed! · 173 files already formatted · 0 errors
+$ uv build && uvx --from dist/amber_compiler-0.1.2-py3-none-any.whl amber --version
+amber 0.1.2
+```
+
+Still with the maintainer: publish the v0.1.2 release (the tag triggers `release.yml`, which
+publishes to PyPI).

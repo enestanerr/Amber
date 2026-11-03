@@ -1,7 +1,7 @@
 {
   "name": "amber",
   "displayName": "Amber",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Turn a workflow Claude Code keeps repeating into a compiled Amber program with replay tests and guards, and repair it when the world drifts",
   "author": {
     "name": "enestanerr",

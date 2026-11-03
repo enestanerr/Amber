@@ -7,6 +7,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-03
+
+Amber is on PyPI. No code changes; this release makes the PyPI page match the README.
+
+### Added
+- Published on PyPI as `amber-compiler`: `uv tool install amber-compiler` (or `pipx install
+  amber-compiler`).
+
+### Changed
+- README: install from PyPI with a PyPI badge; `git+https` is kept for following `main`.
+  FlashScript is credited under the tagline, and Related work adds TraceCompiler and SKILL-DISCO.
+- The plugin's `/amber:compile` skill installs the CLI from PyPI.
+
 ## [0.1.1] - 2026-11-03
 
 Launch preparation: the repository is public.
@@ -121,6 +134,7 @@ First release. Everything below was recorded, compiled, verified and run live wi
 - Project bootstrap (P0): packaging, CLI skeleton (`amber --version`, `amber init`), lint,
   type-check, test and CI configuration.
 
-[Unreleased]: https://github.com/enestanerr/Amber/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/enestanerr/Amber/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/enestanerr/Amber/releases/tag/v0.1.2
 [0.1.1]: https://github.com/enestanerr/Amber/releases/tag/v0.1.1
 [0.1.0]: https://github.com/enestanerr/Amber/releases/tag/v0.1.0
