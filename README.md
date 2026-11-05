@@ -122,7 +122,8 @@ make heal                                                     # agent resumes â†
 ```
 
 [docs/user/quickstart.md](https://github.com/enestanerr/Amber/blob/main/docs/user/quickstart.md) shows the real output of every step. On
-Windows, run `make` from Git Bash or type the commands from each example's `Makefile`.
+Windows, no `make` or Git Bash is needed: run `python scripts/run_example.py <example> <target>` instead (see
+[docs/user/windows-without-make.md](docs/user/windows-without-make.md)); `uv` is still required.
 
 ## Use it with Claude
 
@@ -416,7 +417,7 @@ read_roots = ["./data"]         # where the compiled Read/Glob/Grep builtins may
 | `llm token budget exceeded` | raise `[budgets] max_llm_tokens`; it applies on the next run |
 | `amber run` exits 4 | a guard stopped it: `amber doctor <wf>`, then follow the recommendation (or `/amber:heal`) |
 | `amber verify` exits 3 | the program and the recordings disagree; the diff shows the first divergent call |
-| `make` not found on Windows | use Git Bash, or run the commands from the example's `Makefile` |
+| `make` not found on Windows | use `python scripts/run_example.py <example> <target>` instead of `make` (see `docs/user/windows-without-make.md`); `uv` is still required |
 
 ## Limitations
 
